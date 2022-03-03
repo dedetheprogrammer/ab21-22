@@ -98,14 +98,18 @@ void HuffmanEncodedFile(string file, vector<Coding> codes){
     // Indice del ultimo punto que indica la extension del fichero.
     size_t lastindex = file.find_last_of("."); 
     // Extrae la subcadena resultante de quitarle la extension al fichero.
-    string rawname = file.substr(0, lastindex) + "_hfm"; 
+    string rawname = file.substr(0, lastindex) + ".huf"; 
 
     fstream fin(file, fstream::in);
     fstream fout(rawname, fstream::out);
 
     // HuffmanMagicNumbers: header especial para poder decodificar el archivo 
     // comprimido al archivo de origen (? - Hay que revisarlo).
-    //for (auto it : codes) fout << it.code << it.key;
+    /*for (auto it : codes) {
+        bitset<8> code(it.code);
+        fout << it.key << it.code.length() << (unsigned char) code.to_ulong();
+    }
+    fout << '\0';*/
 
     // Lee el fichero original caracter a caracter y escribe su codificacion 
     // correspondiente en el nuevo fichero.
@@ -117,12 +121,12 @@ void HuffmanEncodedFile(string file, vector<Coding> codes){
         bit_str += it->code;
         if (bit_str.length() >= 8) {
             bitset<8> b(bit_str.substr(0,8));
-            fout << ((unsigned char)(b.to_ulong() & 0xFF));
+            fout << (unsigned char) b.to_ulong();
             bit_str = bit_str.substr(8,bit_str.length()-8);
         }
     }
     bitset<8> b(bit_str);
-    fout << ((unsigned char)(b.to_ulong() & 0xFF));
+    fout << (unsigned char) b.to_ulong();
 }
 
 int main(int argc, char *argv[]) {
@@ -146,8 +150,8 @@ int main(int argc, char *argv[]) {
     // Obtener la tabla de codificacion.
     vector<Coding> codes;
     HuffmanCodes(&codes, root, "");
-    //cout << "\nCODING TABLE:\n";
-    //for (auto it:codes) cout << it << endl;  
+    cout << "\nCODING TABLE:\n";
+    for (auto it:codes) cout << it << endl;  
     
 
     // Codificar el archivo.
