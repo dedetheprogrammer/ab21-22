@@ -1,12 +1,7 @@
-#include <algorithm>
-#include <bitset>
-#include <fstream>
-#include <iostream>
-#include <string>
-#include <vector>
-#include "HuffmanHeap.h"
-
-/* Implementation source:
+/* ****************************************************************************
+ * Author: Devid Dokash.
+ * Date: 03/03/2022.
+ * ****************************************************************************
  * Read file char by char:
     https://stackoverflow.com/a/12240035/17824234
  * Finding element if exists in structs vector (idea adapted to the code):
@@ -23,7 +18,15 @@
     https://stackoverflow.com/questions/6417817/easy-way-to-remove-extension-from-a-filename
  * Bitstring to byte:
     https://stackoverflow.com/a/26661731/17824234
- */
+ * ***************************************************************************/
+
+#include <algorithm>
+#include <bitset>
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <vector>
+#include "HuffmanHeap.h"
 
 using namespace std;
 
