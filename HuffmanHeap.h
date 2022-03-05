@@ -1,14 +1,15 @@
+/* ****************************************************************************
+ * Author: Devid Dokash.
+ * Date: 03/03/2022.
+ * ****************************************************************************
+ * Overloading operators << and >>:
+    https://www.tutorialspoint.com/cplusplus/input_output_operators_overloading.htm
+ * ***************************************************************************/
 #pragma once
+
 #include <ostream>
 #include <string>
 #include <vector>
-/*
- * SOURCE:
- * Overloading operators << and >>:
-    https://www.tutorialspoint.com/cplusplus/input_output_operators_overloading.htm
- *
- */
-
 
 class HuffmanHeap {
 private:
@@ -31,25 +32,15 @@ public:
         if (right_son != nullptr) delete right_son;
     }
 
-    HuffmanHeap* getLeft_son() const {
-        return left_son;
-    }
+    HuffmanHeap* getLeft_son() const { return left_son; }
 
-    HuffmanHeap* getRight_son() const {
-        return right_son;
-    }
+    HuffmanHeap* getRight_son() const { return right_son; }
 
-    char getChar() const {
-        return the_char;
-    }
+    char getChar() const { return the_char; }
 
-    int getFreq() const {
-        return freq;
-    }
+    int getFreq() const { return freq; }
 
-    void incFreq() {
-        freq++;
-    }
+    void incFreq() { freq++; }
 
     void PrintHuffmanHeap(int level, std::string msg){
         for (int i = 0; i < level; i++) std::cout << "--";

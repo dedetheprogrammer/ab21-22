@@ -19,16 +19,17 @@
  * Bitstring to byte:
     https://stackoverflow.com/a/26661731/17824234
  * ***************************************************************************/
-
 #include <algorithm>
 #include <bitset>
 #include <fstream>
 #include <iostream>
-#include <string>
+#include <string.h>
 #include <vector>
 #include "HuffmanHeap.h"
 
 using namespace std;
+
+bool verbose = false;
 
 struct Coding {
     char key;
@@ -41,7 +42,7 @@ std::ostream& operator <<(std::ostream& os, const Coding& c){
 }
 
 /*****************************************************************************/
-void FrequencesTable(vector<HuffmanHeap*> *freqs, string file){
+void FrequencesTable(string file, vector<HuffmanHeap*> *freqs) {
     fstream fin(file, fstream::in);
 
     char ch;
@@ -58,9 +59,14 @@ void FrequencesTable(vector<HuffmanHeap*> *freqs, string file){
         });
 }
 
+void PrintFreqsTable(vector<HuffmanHeap*> *freqs){
+    cout << "\nCHARS AND FREQUENCIES:\n";
+    for (auto it:*freqs) cout << *it << endl;
+    cout << endl;
+}
 
 /*****************************************************************************/
-void FullHuffmanHeap(vector<HuffmanHeap*> *freqs){
+void FullHuffmanHeap(vector<HuffmanHeap*> *freqs) {
     HuffmanHeap *_1, *_2;
     if (freqs->size() > 1) {
         _1 = PopHuffmanHeap(freqs);
@@ -73,6 +79,13 @@ void FullHuffmanHeap(vector<HuffmanHeap*> *freqs){
     }
 }
 
+void PrintHuffmanHeap(HuffmanHeap* root) {
+    cout << "\nHUFFMAN HEAP:\n";
+    if (root != nullptr) root->PrintHuffmanHeap(0, "R00T");
+    else cout << "Empty heap.";
+    cout << endl;
+}
+
 /*****************************************************************************/
 void HuffmanCodes(vector<Coding>* codes, HuffmanHeap* heap, string code) {
     if (heap->getLeft_son() == nullptr && heap->getRight_son() == nullptr) {
@@ -82,78 +95,167 @@ void HuffmanCodes(vector<Coding>* codes, HuffmanHeap* heap, string code) {
         codes->insert(pos, Coding{heap->getChar(), code});
     } else {
         HuffmanHeap* son = heap->getLeft_son();
-        if (son != nullptr) HuffmanCodes(codes, son, "0" + code);
+        if (son != nullptr) HuffmanCodes(codes, son, code + "0");
         son = heap->getRight_son();
-        if (son != nullptr) HuffmanCodes(codes, son, "1" + code);
+        if (son != nullptr) HuffmanCodes(codes, son, code + "1");
     }
 }
 
+string HuffmanCodesFile(string codes_file, vector<Coding> *codes, int *maxL) {
+    fstream fin(codes_file, fstream::in);
+
+    int sep;
+    string ext, line, key, code;
+    getline(fin, ext);
+    while (getline(fin, line)) {
+        sep = line.find_last_of(" ");
+        key = line.substr(0, sep);
+        code = line.substr(sep+1, line.length()-sep);
+        if (key.compare("\\n") == 0) codes->push_back(Coding{'\n',code});
+        else codes->push_back(Coding{key[0], code});
+
+        int length = code.length();
+        if (length > *maxL) *maxL = length;
+    }
+    return "." + ext;
+}
+
+void PrintHuffmanCodesTable(vector<Coding>* codes) {
+    cout << "\nCODING TABLE:\n";
+    for (auto it:*codes) cout << it << endl;  
+    cout << endl;
+}
 
 /* ***************************************************************************
  * Codifica el archivo original, con la tabla de codificacion de los caracteres
  * calculada anteriormente, en un nuevo fichero "<nombre_fichero>_hfm". 
  * ***************************************************************************/
-void HuffmanEncodedFile(string file, vector<Coding> codes){
+void HuffmanFileEncoding(string file, vector<Coding> codes){
     // Obtiene el nombre de fichero sin la extension.
     // Indice del ultimo punto que indica la extension del fichero.
     size_t lastindex = file.find_last_of("."); 
     // Extrae la subcadena resultante de quitarle la extension al fichero.
-    string rawname = file.substr(0, lastindex) + ".huf"; 
-
-    fstream fin(file, fstream::in);
-    fstream fout(rawname, fstream::out);
-
-    // HuffmanMagicNumbers: header especial para poder decodificar el archivo 
-    // comprimido al archivo de origen (? - Hay que revisarlo).
-    /*for (auto it : codes) {
-        bitset<8> code(it.code);
-        fout << it.key << it.code.length() << (unsigned char) code.to_ulong();
-    }
-    fout << '\0';*/
+    string rawname = file.substr(0, lastindex);
 
     // Lee el fichero original caracter a caracter y escribe su codificacion 
     // correspondiente en el nuevo fichero.
     char ch;
-    string bit_str = "";
+    string bitstring = "";
+    fstream fin(file, fstream::in);
+    ofstream fout(rawname + ".huf", ios::binary);
     while (fin >> noskipws >> ch) {
         auto it = find_if(codes.begin(), codes.end(), 
             [&ch](const Coding &cf) { return cf.key == ch; });
-        bit_str += it->code;
-        if (bit_str.length() >= 8) {
-            bitset<8> b(bit_str.substr(0,8));
+        bitstring += it->code;
+        if (bitstring.length() >= 8) {
+            bitset<8> b(bitstring.substr(0,8));
             fout << (unsigned char) b.to_ulong();
-            bit_str = bit_str.substr(8,bit_str.length()-8);
+            bitstring = bitstring.substr(8,bitstring.length()-8);
         }
     }
-    bitset<8> b(bit_str);
-    fout << (unsigned char) b.to_ulong();
+    bitset<8> b(bitstring);
+    fout << (unsigned char) (b << (8-bitstring.length())).to_ulong();
+
+    // HuffmanMagicNumbers: header especial para poder decodificar el archivo 
+    // comprimido al archivo de origen (? - Hay que revisarlo).
+    fstream fout_c(rawname + ".dec", fstream::out);
+    fout_c << file.substr(lastindex+1, file.length()-lastindex) /* << " "
+        << (8-bitstring.length())*/ << endl;
+    for (auto it : codes) {
+        bitset<8> code(it.code);
+        if (it.key == '\n') fout_c << "\\n";
+        else fout_c << it.key;
+        fout_c << " " << it.code << "\n";
+    }
 }
 
-int main(int argc, char *argv[]) {
-    string file(argv[1]);
+/* ***************************************************************************/
+void HuffmanFileDecoding(string file) {
 
-    // Obtener la tabla de frecuencias.
-    vector<HuffmanHeap*> freqs;
-    FrequencesTable(&freqs, file);
-    //cout << "\nCHARS AND FREQUENCIES:\n";
-    //for (auto it:freqs) cout << *it << endl;
-
-    // Obtener el monticulo de frecuencias de Huffman.
-    FullHuffmanHeap(&freqs);
-    HuffmanHeap *root = freqs.back();
-    vector<HuffmanHeap*>().swap(freqs);
-
-    //cout << "\nHUFFMAN HEAP:\n";
-    //if (root != nullptr) root->PrintHuffmanHeap(0, "R00T");
-    //else cout << "Empty heap.";
-
-    // Obtener la tabla de codificacion.
+    int maxLength = 0;
     vector<Coding> codes;
-    HuffmanCodes(&codes, root, "");
-    cout << "\nCODING TABLE:\n";
-    for (auto it:codes) cout << it << endl;  
-    
+    string ext = HuffmanCodesFile(file + ".dec", &codes, &maxLength);
 
-    // Codificar el archivo.
-    HuffmanEncodedFile(file, codes);
+    ifstream fin(file + ".huf", ios::binary);
+    fstream fout(file + "_rest" + ext, fstream::out);
+
+    unsigned char ch;
+    string bitstring = "";
+    while (fin >> noskipws >> ch) {
+        bitset<8> bitchain(ch);
+        bitstring += bitchain.to_string();
+        //cout << "------------------------------" << endl;
+        //cout << "NEW   " << bitchain.to_string() << endl;
+        //cout << "SUM   " << bitstring << endl;
+
+        while (bitstring.length() >= maxLength) {
+            int i = 1;
+            vector<Coding>::iterator it;
+            for (it = codes.end(); it == codes.end() && i <= maxLength; i++) {
+                it = find_if(codes.begin(), codes.end(),
+                    [&bitstring, &i](const Coding &cd) { 
+                        return cd.code.compare(bitstring.substr(0, i)) == 0; 
+                    });
+            }
+            
+            bitstring = bitstring.substr(i-1, bitstring.length()-(i-1));
+            fout << it->key;
+            //cout << "------" << endl;
+            //cout << "CHAR  " << it->key << endl;
+            //cout << "LEFT  " << bitstring << endl;
+        } 
+    }
+}
+
+/* ***************************************************************************/
+void HelpLog(int err) {
+    switch (err) {
+    case 1:
+        cout << "\nerror -- this is not the huffman file...\n";
+        break;
+    }
+    cout << "\nhuf <options> <file_name>\n";
+    cout << "\t-c   compress the file.\n";
+    cout << "\t-d   decompress the file.\n";
+}
+
+/* ***************************************************************************/
+int main(int argc, char *argv[]) {
+    if (argc != 3) {
+        HelpLog(0);
+        return -1;
+    }
+
+    string file(argv[2]);
+    if (strcmp(argv[1],"-c") == 0){
+        // Tabla de frecuencias.
+        vector<HuffmanHeap*> freqs;
+        FrequencesTable(file, &freqs);
+        if (verbose) PrintFreqsTable(&freqs);
+
+        // Monticulo de frecuencias de Huffman.
+        FullHuffmanHeap(&freqs);
+        HuffmanHeap *root = freqs.back();
+        vector<HuffmanHeap*>().swap(freqs);
+        if (verbose) PrintHuffmanHeap(root);
+
+        // Tabla de codificacion.
+        vector<Coding> codes;
+        HuffmanCodes(&codes, root, "");
+        if (verbose) PrintHuffmanCodesTable(&codes);
+
+        // Codificacion del archivo.
+        HuffmanFileEncoding(file, codes);
+
+    } else {
+        if(strcmp(argv[1],"-d") == 0){
+            size_t lastindex = file.find_last_of(".");
+            string ext = file.substr(lastindex, file.length()-lastindex);
+            file = file.substr(0, lastindex);
+
+            if(ext.compare(".huf") != 0) HelpLog(1);
+            else HuffmanFileDecoding(file);
+
+        } else HelpLog(0);
+    }
 }
