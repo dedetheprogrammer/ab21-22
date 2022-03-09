@@ -18,12 +18,15 @@
     https://stackoverflow.com/questions/6417817/easy-way-to-remove-extension-from-a-filename
  * Bitstring to byte:
     https://stackoverflow.com/a/26661731/17824234
+ * Get file size:
+    https://stackoverflow.com/a/6039648/17824234
  * ***************************************************************************/
 #include <algorithm>
 #include <bitset>
 #include <fstream>
 #include <iostream>
 #include <string.h>
+#include <sys/stat.h>
 #include <vector>
 #include "HuffmanHeap.h"
 
@@ -39,6 +42,32 @@ struct Coding {
 std::ostream& operator <<(std::ostream& os, const Coding& c){
     os << c.key << ":" << c.code;
     return os;
+}
+
+/* ***************************************************************************/
+void HelpLog(int err, string msg) {
+    switch (err) {
+    case 1:
+        cout << "\nerror -- \"" << msg << "\" is not the huffman file...\n";
+        break;
+    case 2: 
+        cout << "\nerror -- unable to open \"" << msg << "\", check it again...\n";
+        break;
+    }
+    cout << "\nhuf <options> <file_name>\n";
+    cout << "\t-c   compress the file.\n";
+    cout << "\t-d   decompress the file.\n";
+}
+
+long GetFileSize(string file) {
+    struct stat stat_buf;
+    int rc = stat(file.c_str(), &stat_buf);
+    return rc == 0 ? stat_buf.st_size : -1;
+}
+
+bool existsFile(string file) {
+    ifstream fin(file);
+    return fin.is_open();
 }
 
 /*****************************************************************************/
@@ -101,23 +130,28 @@ void HuffmanCodes(vector<Coding>* codes, HuffmanHeap* heap, string code) {
     }
 }
 
-string HuffmanCodesFile(string codes_file, vector<Coding> *codes, int *maxL) {
+void HuffmanCodesFile(string codes_file, vector<Coding> *codes, string *ext, int *left, int *maxL) {
     fstream fin(codes_file, fstream::in);
 
     int sep;
-    string ext, line, key, code;
-    getline(fin, ext);
+    string line;
+    getline(fin, line);
+    if (line.compare("") != 0) {
+        sep = line.find_last_of(" ");
+        *ext = "." + line.substr(0, sep);
+        *left = atoi((line.substr(sep+1, line.length()-sep)).c_str());
+    }
+
     while (getline(fin, line)) {
         sep = line.find_last_of(" ");
-        key = line.substr(0, sep);
-        code = line.substr(sep+1, line.length()-sep);
+        string key = line.substr(0, sep);
+        string code = line.substr(sep+1, line.length()-sep);
         if (key.compare("\\n") == 0) codes->push_back(Coding{'\n',code});
         else codes->push_back(Coding{key[0], code});
 
         int length = code.length();
         if (length > *maxL) *maxL = length;
     }
-    return "." + ext;
 }
 
 void PrintHuffmanCodesTable(vector<Coding>* codes) {
@@ -159,8 +193,8 @@ void HuffmanFileEncoding(string file, vector<Coding> codes){
     // HuffmanMagicNumbers: header especial para poder decodificar el archivo 
     // comprimido al archivo de origen (? - Hay que revisarlo).
     fstream fout_c(rawname + ".dec", fstream::out);
-    fout_c << file.substr(lastindex+1, file.length()-lastindex) /* << " "
-        << (8-bitstring.length())*/ << endl;
+    fout_c << file.substr(lastindex+1, file.length()-lastindex) << " "
+        << (8-bitstring.length()) << endl;
     for (auto it : codes) {
         bitset<8> code(it.code);
         if (it.key == '\n') fout_c << "\\n";
@@ -171,24 +205,22 @@ void HuffmanFileEncoding(string file, vector<Coding> codes){
 
 /* ***************************************************************************/
 void HuffmanFileDecoding(string file) {
-
-    int maxLength = 0;
+    int maxLength = 0, left = 0;
     vector<Coding> codes;
-    string ext = HuffmanCodesFile(file + ".dec", &codes, &maxLength);
+    string ext;
+    
+    HuffmanCodesFile(file + ".dec", &codes, &ext, &left, &maxLength);
 
     ifstream fin(file + ".huf", ios::binary);
-    fstream fout(file + "_rest" + ext, fstream::out);
+    fstream fout(file + "_orig" + ext, fstream::out);
 
     unsigned char ch;
     string bitstring = "";
-    while (fin >> noskipws >> ch) {
-        bitset<8> bitchain(ch);
-        bitstring += bitchain.to_string();
-        //cout << "------------------------------" << endl;
-        //cout << "NEW   " << bitchain.to_string() << endl;
-        //cout << "SUM   " << bitstring << endl;
 
-        while (bitstring.length() >= maxLength) {
+    long readed_bits = 0;
+    long size = (GetFileSize(file + ".huf") * 8 ) - left;
+    while (readed_bits < size) {
+        if (bitstring.length() >= maxLength) {
             int i = 1;
             vector<Coding>::iterator it;
             for (it = codes.end(); it == codes.end() && i <= maxLength; i++) {
@@ -200,34 +232,45 @@ void HuffmanFileDecoding(string file) {
             
             bitstring = bitstring.substr(i-1, bitstring.length()-(i-1));
             fout << it->key;
-            //cout << "------" << endl;
-            //cout << "CHAR  " << it->key << endl;
-            //cout << "LEFT  " << bitstring << endl;
-        } 
-    }
-}
+            readed_bits += (i-1);
+            if (verbose) {
+                cout << "------" << endl;
+                cout << "CHAR  " << it->key << endl;
+                cout << "LEFT  " << bitstring << endl;
+            }
 
-/* ***************************************************************************/
-void HelpLog(int err) {
-    switch (err) {
-    case 1:
-        cout << "\nerror -- this is not the huffman file...\n";
-        break;
+        } else {
+            fin >> noskipws >> ch;
+            bitset<8> bitchain(ch);
+            bitstring += bitchain.to_string();
+            if (verbose) {
+                cout << "------------------------------" << endl;
+                cout << "NEW   " << bitchain.to_string() << endl;
+                cout << "SUM   " << bitstring << endl;
+            }
+        }
     }
-    cout << "\nhuf <options> <file_name>\n";
-    cout << "\t-c   compress the file.\n";
-    cout << "\t-d   decompress the file.\n";
 }
 
 /* ***************************************************************************/
 int main(int argc, char *argv[]) {
     if (argc != 3) {
-        HelpLog(0);
+        HelpLog(0,"");
         return -1;
     }
 
     string file(argv[2]);
+    if (!existsFile(file)) {
+        HelpLog(2, file);
+        return -1;
+    }
+
     if (strcmp(argv[1],"-c") == 0){
+        if(GetFileSize(file) == 0) {
+            cerr << "\nwarning -- your file was empty, no file was generated...\n";
+            exit(0);
+        }
+
         // Tabla de frecuencias.
         vector<HuffmanHeap*> freqs;
         FrequencesTable(file, &freqs);
@@ -246,16 +289,13 @@ int main(int argc, char *argv[]) {
 
         // Codificacion del archivo.
         HuffmanFileEncoding(file, codes);
-
     } else {
         if(strcmp(argv[1],"-d") == 0){
             size_t lastindex = file.find_last_of(".");
             string ext = file.substr(lastindex, file.length()-lastindex);
-            file = file.substr(0, lastindex);
 
-            if(ext.compare(".huf") != 0) HelpLog(1);
-            else HuffmanFileDecoding(file);
-
-        } else HelpLog(0);
+            if(ext.compare(".huf") != 0) HelpLog(1, file);
+            else HuffmanFileDecoding(file.substr(0, lastindex));
+        } else HelpLog(0, "");
     }
 }
