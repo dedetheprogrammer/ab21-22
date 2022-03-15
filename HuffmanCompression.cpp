@@ -10,7 +10,7 @@
     https://stackoverflow.com/a/47991118/17824234
  * Sorting a vector by second pair element (idea adapted to the code):
     https://www.geeksforgeeks.org/sorting-vector-of-pairs-in-c-set-1-sort-by-first-and-second/
- * Using functions as parameters: 
+ * Using functions as parameters:
     https://www.geeksforgeeks.org/passing-a-function-as-a-parameter-in-cpp/
  * Free up memory space reserved for vector:
     https://www.techiedelight.com/delete-vector-free-memory-cpp/
@@ -23,26 +23,18 @@
  * ***************************************************************************/
 #include <algorithm>
 #include <bitset>
+#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <string.h>
 #include <sys/stat.h>
+#include <unordered_map>
 #include <vector>
 #include "HuffmanHeap.h"
 
 using namespace std;
 
 bool verbose = false;
-
-struct Coding {
-    char key;
-    string code;
-};
-
-std::ostream& operator <<(std::ostream& os, const Coding& c){
-    os << c.key << ":" << c.code;
-    return os;
-}
 
 /* ***************************************************************************/
 void HelpLog(int err, string msg) {
@@ -51,7 +43,8 @@ void HelpLog(int err, string msg) {
         cout << "\nerror -- \"" << msg << "\" is not the huffman file...\n";
         break;
     case 2: 
-        cout << "\nerror -- unable to open \"" << msg << "\", check it again...\n";
+        cout << "\nerror -- unable to open \"" << msg 
+                << "\", check it again...\n";
         break;
     }
     cout << "\nhuf <options> <file_name>\n";
@@ -116,12 +109,9 @@ void PrintHuffmanHeap(HuffmanHeap* root) {
 }
 
 /*****************************************************************************/
-void HuffmanCodes(vector<Coding>* codes, HuffmanHeap* heap, string code) {
+void HuffmanCodes(unordered_map<char, string>* codes, HuffmanHeap* heap, string code) {
     if (heap->getLeft_son() == nullptr && heap->getRight_son() == nullptr) {
-        auto pos = find_if(codes->begin(), codes->end(), 
-            [code](const Coding &s) { 
-                return s.code.length() >= code.length() && s.code >= code; });
-        codes->insert(pos, Coding{heap->getChar(), code});
+        codes->insert({heap->getChar(), code});
     } else {
         HuffmanHeap* son = heap->getLeft_son();
         if (son != nullptr) HuffmanCodes(codes, son, code + "0");
@@ -130,7 +120,8 @@ void HuffmanCodes(vector<Coding>* codes, HuffmanHeap* heap, string code) {
     }
 }
 
-void HuffmanCodesFile(string codes_file, vector<Coding> *codes, string *ext, int *left, int *maxL) {
+void HuffmanCodesFile(string codes_file, unordered_map<string, char> *codes, 
+        string *ext, int *left, int *maxL) {
     fstream fin(codes_file, fstream::in);
 
     int sep;
@@ -146,25 +137,25 @@ void HuffmanCodesFile(string codes_file, vector<Coding> *codes, string *ext, int
         sep = line.find_last_of(" ");
         string key = line.substr(0, sep);
         string code = line.substr(sep+1, line.length()-sep);
-        if (key.compare("\\n") == 0) codes->push_back(Coding{'\n',code});
-        else codes->push_back(Coding{key[0], code});
+        if (key.compare("\\n") == 0) codes->insert({code,'\n'});
+        else codes->insert({code,key[0]});
 
         int length = code.length();
         if (length > *maxL) *maxL = length;
     }
 }
 
-void PrintHuffmanCodesTable(vector<Coding>* codes) {
+/*void PrintHuffmanCodesTable(unordered_map<char, string>* codes) {
     cout << "\nCODING TABLE:\n";
-    for (auto it:*codes) cout << it << endl;  
+    for (auto &it:*codes) cout << it << endl;  
     cout << endl;
-}
+}*/
 
 /* ***************************************************************************
  * Codifica el archivo original, con la tabla de codificacion de los caracteres
  * calculada anteriormente, en un nuevo fichero "<nombre_fichero>_hfm". 
  * ***************************************************************************/
-void HuffmanFileEncoding(string file, vector<Coding> codes){
+void HuffmanFileEncoding(string file, unordered_map<char,string>* codes){
     // Obtiene el nombre de fichero sin la extension.
     // Indice del ultimo punto que indica la extension del fichero.
     size_t lastindex = file.find_last_of("."); 
@@ -178,9 +169,7 @@ void HuffmanFileEncoding(string file, vector<Coding> codes){
     fstream fin(file, fstream::in);
     ofstream fout(rawname + ".huf", ios::binary);
     while (fin >> noskipws >> ch) {
-        auto it = find_if(codes.begin(), codes.end(), 
-            [&ch](const Coding &cf) { return cf.key == ch; });
-        bitstring += it->code;
+        bitstring += codes->at(ch);
         if (bitstring.length() >= 8) {
             bitset<8> b(bitstring.substr(0,8));
             fout << (unsigned char) b.to_ulong();
@@ -195,18 +184,18 @@ void HuffmanFileEncoding(string file, vector<Coding> codes){
     fstream fout_c(rawname + ".dec", fstream::out);
     fout_c << file.substr(lastindex+1, file.length()-lastindex) << " "
         << (8-bitstring.length()) << endl;
-    for (auto it : codes) {
-        bitset<8> code(it.code);
-        if (it.key == '\n') fout_c << "\\n";
-        else fout_c << it.key;
-        fout_c << " " << it.code << "\n";
+    for (auto& it : *codes) {
+        bitset<8> code(it.second);
+        if (it.first == '\n') fout_c << "\\n";
+        else fout_c << it.first;
+        fout_c << " " << it.second << "\n";
     }
 }
 
 /* ***************************************************************************/
 void HuffmanFileDecoding(string file) {
     int maxLength = 0, left = 0;
-    vector<Coding> codes;
+    unordered_map<string,char> codes;
     string ext;
     
     HuffmanCodesFile(file + ".dec", &codes, &ext, &left, &maxLength);
@@ -216,26 +205,21 @@ void HuffmanFileDecoding(string file) {
 
     unsigned char ch;
     string bitstring = "";
-
     long readed_bits = 0;
     long size = (GetFileSize(file + ".huf") * 8 ) - left;
     while (readed_bits < size) {
         if (bitstring.length() >= maxLength) {
             int i = 1;
-            vector<Coding>::iterator it;
-            for (it = codes.end(); it == codes.end() && i <= maxLength; i++) {
-                it = find_if(codes.begin(), codes.end(),
-                    [&bitstring, &i](const Coding &cd) { 
-                        return cd.code.compare(bitstring.substr(0, i)) == 0; 
-                    });
-            }
+            unordered_map<string,char>::iterator it;
+            for (; it == codes.end() && i <= maxLength; i++)
+                it = codes.find(bitstring.substr(0, i));
             
             bitstring = bitstring.substr(i-1, bitstring.length()-(i-1));
-            fout << it->key;
+            fout << it->second;
             readed_bits += (i-1);
             if (verbose) {
                 cout << "------" << endl;
-                cout << "CHAR  " << it->key << endl;
+                cout << "CHAR  " << it->second << endl;
                 cout << "LEFT  " << bitstring << endl;
             }
 
@@ -273,22 +257,35 @@ int main(int argc, char *argv[]) {
 
         // Tabla de frecuencias.
         vector<HuffmanHeap*> freqs;
+        auto t1 = chrono::high_resolution_clock::now();
         FrequencesTable(file, &freqs);
-        if (verbose) PrintFreqsTable(&freqs);
+        auto t2 = chrono::high_resolution_clock::now();
+        chrono::duration<double, std::milli> ms_double = t2 - t1;
+        cout << "FREQUENCES TABLE: " << ms_double.count() << "ms" << endl;
 
         // Monticulo de frecuencias de Huffman.
+        t1 = chrono::high_resolution_clock::now();
         FullHuffmanHeap(&freqs);
         HuffmanHeap *root = freqs.back();
         vector<HuffmanHeap*>().swap(freqs);
-        if (verbose) PrintHuffmanHeap(root);
+        t2 = chrono::high_resolution_clock::now();
+        ms_double = t2 - t1;
+        cout << "FULL HUFFMAN HEAP: " << ms_double.count() << "ms" << endl;
 
         // Tabla de codificacion.
-        vector<Coding> codes;
+        t1 = chrono::high_resolution_clock::now();
+        unordered_map<char, string> codes;
         HuffmanCodes(&codes, root, "");
-        if (verbose) PrintHuffmanCodesTable(&codes);
+        t2 = chrono::high_resolution_clock::now();
+        ms_double = t2 - t1;
+        cout << "HUFFMAN CODES: " << ms_double.count() << "ms" << endl;
 
         // Codificacion del archivo.
-        HuffmanFileEncoding(file, codes);
+        t1 = chrono::high_resolution_clock::now();
+        HuffmanFileEncoding(file, &codes);
+        t2 = chrono::high_resolution_clock::now();
+        ms_double = t2 - t1;
+        cout << "HUFFMAN FILE ENCODING: " << ms_double.count() << "ms" << endl;
     } else {
         if(strcmp(argv[1],"-d") == 0){
             size_t lastindex = file.find_last_of(".");
