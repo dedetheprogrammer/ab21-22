@@ -1,4 +1,4 @@
-# ALGORITMIA BASICA
+# ALGORITMIA BASICA 2021-22
 ## Practicas
 - [Practica 1](https://github.com/ddevigner/ab21-22/tree/main/HuffmanCompression): compresor mediante el algoritmo de Huffman.
     - [HuffmanCompression.cpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/HuffmanCompression.cpp)
