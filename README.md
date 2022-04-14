@@ -17,5 +17,6 @@
         ```bash
             ./huffman -d <file>.huf
         ```
-- [Practica 2](https://github.com/ddevigner/ab21-22/tree/main/VersionStorage): almacen gestor de versiones de ficheros mediante programacion dinamica.
-    - [VersionStorage.cpp](https://github.com/ddevigner/ab21-22/blob/main/VersionStorage/VersionStorage.cpp)
+- [Practica 2](https://github.com/ddevigner/ab21-22/tree/main/VersionStorage): almacen gestor de versiones de ficheros mediante programacion dinamica.  
+    - Archivos:
+        - [VersionStorage.cpp](https://github.com/ddevigner/ab21-22/blob/main/VersionStorage/VersionStorage.cpp)
