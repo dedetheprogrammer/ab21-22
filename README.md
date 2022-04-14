@@ -4,11 +4,17 @@
     - Archivos:
         - [HuffmanCompression.cpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/HuffmanCompression.cpp)
         - [HuffmanHeap.h](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/HuffmanHeap.h)
-    - Compilacion y uso:
+    - Compilacion:
         ```bash
-            # En Hendrix.
             g++ -std=c++11 HuffmanCompression.cpp -o huffman
+        ```
+    - Uso:
+        - Compresion:
+        ```bash
             ./huffman -c <file>
+        ```
+        - Decompresion:
+        ```bash
             ./huffman -d <file>.huf
         ```
 - [Practica 2](https://github.com/ddevigner/ab21-22/tree/main/VersionStorage): almacen gestor de versiones de ficheros mediante programacion dinamica.
