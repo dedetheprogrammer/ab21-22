@@ -34,7 +34,7 @@
 
 using namespace std;
 
-bool verbose = true;
+bool verbose = false;
 
 /* ***************************************************************************/
 void HelpLog(int err, string msg) {
@@ -334,7 +334,7 @@ int main(int argc, char *argv[]) {
             cout << "HUFFMAN FILE ENCODING : " << texec.count() << "ms\n\n";
         }
 
-        return;
+        return 0;
     }
     if(strcmp(argv[1],"-d") == 0){
         size_t lastindex = file.find_last_of(".");
@@ -343,7 +343,7 @@ int main(int argc, char *argv[]) {
         if(ext.compare(".huf") != 0) HelpLog(1, file);
         else HuffmanFileDecoding(file.substr(0, lastindex));
 
-        return;
+        return 0;
     } 
     
     HelpLog(0, "");
