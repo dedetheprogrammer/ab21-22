@@ -9,22 +9,14 @@ using namespace std;
 void Help() {
     std::cout << "Usage: version [options]\n";
     std::cout << "Options:\n" << std::left;
-    std::cout << std::setw(45) << "  follow <file>" << "Follows given file.\n";
-    std::cout << std::setw(45) << "  help" << "Help usage. What then?\n";
-    std::cout << std::setw(45) << "  log" << "Displays every followed file.\n";
-    std::cout << std::setw(45) << "  remove <file>" << "Remove given file.\n";
-    std::cout << std::setw(45) << "  restore <file> {option}" << "Restores a version.\n";
-    std::cout << std::setw(45) << "--version <number>" << "Restores by number.\n";
-    std::cout << std::setw(45) << "--name <name>" << "Restores by name.\n";
-    std::cout << std::setw(45) << "  update <file> [option(s)]" << "Updates a file\n";
-    std::cout << std::setw(45) << "--name <name>" << "Gives name to the new version.\n";
-    std::cout << std::setw(45) << "--comm <info>" << "Gives description to the new version.\n";
-
-    // cout << "  follow <file>Follows given file(s).\n";
-    // cout << "  help\t\t\tVersion help, if not, what would it be?\n";
-    // cout << "  remove <file>\tStops following given file(s).\n";
-    // cout << "  restore <file> {--version <number> | --name <version_name> } \tRestores version n of given file.\n";
-    // cout << "  update <file(s)>\tUpdates given file(s).\n";
+    std::cout << std::setw(20) << "  follow <file>" << "Follows given file.\n";
+    std::cout << std::setw(20) << "  help" << "Help usage. What then?\n";
+    std::cout << std::setw(20) << "  log" << "Displays every followed file.\n";
+    std::cout << std::setw(20) << "  remove <file>" << "Remove given file.\n";
+    std::cout << std::setw(50) << "  restore <file> {--version <n> | --name <name>}"
+        << "Restores a version by number or by name.\n";
+    std::cout << std::setw(50) << "  update <file> [--name <name>][--comm <info>]"
+        << "Updates a file, can give a name and a description.\n";
 }
 
 void option_follow(int argc, char* argv[]) {
@@ -35,7 +27,6 @@ void option_follow(int argc, char* argv[]) {
 
 void option_log(int argc, char* argv[]) {
     if (argc-1 == 1) Version::Log();
-
     // else if(argc-1 == 2) {
     //  Version v(argv[2]);
     //  v.Log();
