@@ -27,6 +27,7 @@ private:
     std::vector<std::vector<Operation>> t;
     struct change {
         Operation op;
+        std::string seq;
         int begin, end;
 
         change() : op(NON), begin(0), end(0) {}
@@ -34,7 +35,7 @@ private:
     } s;
 
     bool mode;
-    std::string changes;
+    std::string parsing, changes;
 
     bool Analysis() {
         if (!A.compare(B)) return 1;
@@ -110,12 +111,13 @@ private:
     }
 
     void Write(Operation op, char c, int n) {
+        //std::cout << Names[op] << c << n;
         if (s.op != op) {
             if (s.op != NON && s.op == DEL && s.begin != s.end) 
                 Save(":" + std::to_string(s.end));
             s = change(op, n);
             Save(Names[op] + std::to_string(n));
-            if (op != DEL) Save(":" + std::string(1, c));
+            if (op != DEL) Save(":" + Parse(s.end - s.begin, c));
         } else if (op == DEL) {
             if (n - s.end != 1) {
                 if (s.begin != s.end) Save(":" + std::to_string(s.end));
@@ -124,20 +126,27 @@ private:
             } else s.end++;
         } else if (op == INS) {
             if (n - s.begin) {
-                Save("+" + std::to_string(n) + ":" + std::string(1, c));
+                Save("+" + std::to_string(n) + ":" + Parse(s.end - s.begin, c));
                 s = change(INS, n);
-            } else Save(std::string(1, c));
+            } else { s.end++; Save(Parse(s.end - s.begin, c)); }
         } else {
             if (n - s.end != 1) {
-                Save("=" + std::to_string(n) + ":" + std::string(1, c));
+                Save("=" + std::to_string(s.end) + ":" + Parse(s.end - s.begin, c));
                 s = change(SUB, n);
-            } else { s.end++; Save(std::string(1, c)); }
+            } else { s.end++; Save(Parse(s.end - s.begin, c)); }
         }
     }
 
     void Save(std::string change) {
         if (!mode) std::cout << change;
         else changes += change;
+    }
+
+    std::string Parse(int i, char c) {
+        if (c == '-') { parsing += std::to_string(i) + ","; return "<DEL>"; }
+        else if(c == '+') { parsing += std::to_string(i) + ","; return "<ADD>"; }
+        else if(c == '=') { parsing += std::to_string(i) + ","; return "<SUB>"; }
+        else return std::string(1,c);
     }
 
 public:
@@ -150,6 +159,7 @@ public:
         t = std::vector<std::vector<Operation>>(A.length(), 
                 std::vector<Operation>(B.length()));
         // --------------------------------------------------------------------
+        //std::cout << std::endl;
     }
 
 
@@ -166,15 +176,15 @@ public:
 
     std::string to_string() {
         mode = 1;
-        changes = "";
+        parsing = changes = "";
         // -- Resolve sequence comparison -------------------------------------
         if (!Analysis()) {
             Compare();
             Resolve(A.length(), B.length());
         }
         // --------------------------------------------------------------------
-        return changes;
+        if (changes.empty()) return "";
+        if (parsing.empty()) return "! " + changes;
+        else return parsing.substr(0,parsing.length()-1) + " " + changes;
     }
-
-
 };
