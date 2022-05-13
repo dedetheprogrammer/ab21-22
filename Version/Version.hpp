@@ -211,9 +211,8 @@ private:
 
     void restore_register(std::string ts) {
         // -- Modified register info ------------------------------------------
-        current_version++;
         std::string modified_register = register_time + "," + register_date + ",1,"
-            + std::to_string(current_version) + "," + std::to_string(current_version) 
+            + std::to_string(current_version) + "," + std::to_string(last_version) 
             + "," + ts + "," + path_file;
 
         std::string line;
@@ -462,17 +461,20 @@ public:
         std::string mods_str = substr(changes_str, " ");
         std::vector<std::string> mods;
         if (mods_str[0] != '!') mods = tokenize(mods_str, ",", 1);
+        std::cout << "LINE TARGET: " << target << std::endl;
+        std::cout << "MODS: " << mods_str << std::endl;
 
         std::string lwac; // Line with applied changes.
         std::vector<std::string> changes = tokenize(changes_str, "[\\+\\-\\=]", 0, 1);
         for (; getline(sav, lwac) && line != target; line++) dst << lwac << "\n";
-        if (sav.eof()) lwac = "";
+        if (line != 1 && sav.eof()) lwac = "";
+        std::cout << lwac << std::endl;
         for (auto c = changes.rbegin(); c != changes.rend(); c += 2) {
             int fof = (*c).find_first_of(":"), fst = stoi((*c).substr(0, fof));
             if ((*(c + 1))[0] == '-') {
-                lwac = lwac.substr(0, fst - 1);
                 if (fof == -1) lwac.erase(fst - 1, 1);
                 else lwac.erase(fst - 1, stoi((*c).substr(fof + 1)));
+
             } else {
                 std::string seq = unparse(mods, (*c).substr(fof + 1));
                 if ((*(c + 1))[0] == '+') lwac.insert(fst - 1, seq);
@@ -480,23 +482,26 @@ public:
             }
             dst << lwac << "\n";
         }
+        std::cout << lwac << std::endl;
     }
 
     void Restore(int version) {
         try {
-            int line = 0;
+            int line = 1;
             std::string changes_file, otou, utoo, ts = timestamp();
             std::ifstream sav("version/" + version_id, std::ios::binary);
-            std::ofstream dst("arg", std::ios::binary);
+            std::ofstream dst(arg, std::ios::binary);
 
             // -- Si se quiere recuperar una version posterior.
             if (version > last_version) throw version_not_found(version);
             for (; current_version < version; current_version++) {
                 changes_file = "version/" + version_id + "_" + 
-                    padding(current_version, '0', 5) + "__";
+                    padding(current_version+1, '0', 5) + "__";
                 std::ifstream in(changes_file, std::ios::binary);
-                for (; getline(in, otou) && getline(in, utoo); )
+                for (; getline(in, otou) && getline(in, utoo); ) {
+                    std::cout << otou << std::endl;
                     a_link_to_the_past(otou, line, sav, dst);
+                }
                 in.close();
             }
  
@@ -505,10 +510,14 @@ public:
                 changes_file = "version/" + version_id + "_" + 
                     padding(current_version, '0', 5) + "__";
                 std::ifstream in(changes_file, std::ios::binary);
-                for (; getline(in, otou) && getline(in, utoo); )
+                for (; getline(in, otou) && getline(in, utoo); ) {
+                    std::cout << utoo << std::endl;
                     a_link_to_the_past(utoo, line, sav, dst);
+                }
                 in.close();
             }
+            sav.close(); dst.close();
+            
             restore_register(ts);
             backup_file(arg, "version/" + version_id);
 
