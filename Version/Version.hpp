@@ -465,59 +465,70 @@ public:
         std::cout << "MODS: " << mods_str << std::endl;
 
         std::string lwac; // Line with applied changes.
-        std::vector<std::string> changes = tokenize(changes_str, "[\\+\\-\\=]", 0, 1);
+        std::vector<std::string> changes = tokenize(changes_str, "(\\+|\\-|\\=)", 0, 1);
+
         for (; getline(sav, lwac) && line != target; line++) dst << lwac << "\n";
         if (line != 1 && sav.eof()) lwac = "";
-        std::cout << lwac << std::endl;
         for (auto c = changes.rbegin(); c != changes.rend(); c += 2) {
-            int fof = (*c).find_first_of(":"), fst = stoi((*c).substr(0, fof));
-            if ((*(c + 1))[0] == '-') {
-                if (fof == -1) lwac.erase(fst - 1, 1);
-                else lwac.erase(fst - 1, stoi((*c).substr(fof + 1)));
+            int fof = (*c).find_first_of(":"), fst;
+            std::string seq;
 
+            if (fof != std::string::npos) {
+                fst = stoi((*c).substr(0, fof));
+                seq = (*c).substr(fof + 1);
             } else {
-                std::string seq = unparse(mods, (*c).substr(fof + 1));
+                fst = stoi((*c));
+                seq = "1";
+            }
+  
+            if ((*(c + 1))[0] == '-') lwac.erase(fst - 1, stoi(seq));
+            else {
+                seq = unparse(mods, seq);
                 if ((*(c + 1))[0] == '+') lwac.insert(fst - 1, seq);
                 else if ((*(c + 1))[0] == '=') lwac.replace(fst - 1, seq.length(), seq);
             }
             dst << lwac << "\n";
         }
-        std::cout << lwac << std::endl;
     }
 
     void Restore(int version) {
         try {
+            if (current_version == version) return;
+
+
             int line = 1;
             std::string changes_file, otou, utoo, ts = timestamp();
             std::ifstream sav("version/" + version_id, std::ios::binary);
             std::ofstream dst(arg, std::ios::binary);
 
             // -- Si se quiere recuperar una version posterior.
-            if (version > last_version) throw version_not_found(version);
-            for (; current_version < version; current_version++) {
-                changes_file = "version/" + version_id + "_" + 
-                    padding(current_version+1, '0', 5) + "__";
-                std::ifstream in(changes_file, std::ios::binary);
-                for (; getline(in, otou) && getline(in, utoo); ) {
-                    std::cout << otou << std::endl;
-                    a_link_to_the_past(otou, line, sav, dst);
+            if (current_version < version) {
+                if (version > last_version) throw version_not_found(version);
+                for (; current_version < version; current_version++) {
+                    changes_file = "version/" + version_id + "_" + 
+                        padding(current_version+1, '0', 5) + "__";
+                    std::ifstream in(changes_file, std::ios::binary);
+                    for (; getline(in, otou) && getline(in, utoo); ) {
+                        std::cout << otou << std::endl;
+                        a_link_to_the_past(otou, line, sav, dst);
+                    }
+                    in.close();
                 }
-                in.close();
-            }
- 
-            // -- Si se quiere recuperar una version anterior.
-            for (; current_version > version; current_version--) {
-                changes_file = "version/" + version_id + "_" + 
-                    padding(current_version, '0', 5) + "__";
-                std::ifstream in(changes_file, std::ios::binary);
-                for (; getline(in, otou) && getline(in, utoo); ) {
-                    std::cout << utoo << std::endl;
-                    a_link_to_the_past(utoo, line, sav, dst);
+            } else {
+                // -- Si se quiere recuperar una version anterior.
+                for (; current_version > version; current_version--) {
+                    changes_file = "version/" + version_id + "_" + 
+                        padding(current_version, '0', 5) + "__";
+                    std::ifstream in(changes_file, std::ios::binary);
+                    for (; getline(in, otou) && getline(in, utoo); ) {
+                        std::cout << utoo << std::endl;
+                        a_link_to_the_past(utoo, line, sav, dst);
+                    }
+                    in.close();
                 }
-                in.close();
             }
             sav.close(); dst.close();
-            
+
             restore_register(ts);
             backup_file(arg, "version/" + version_id);
 
