@@ -19,4 +19,16 @@
         ```
 - [Practica 2](https://github.com/ddevigner/ab21-22/tree/main/VersionStorage): almacen gestor de versiones de ficheros mediante programacion dinamica.  
     - Archivos:
-        - [VersionStorage.cpp](https://github.com/ddevigner/ab21-22/blob/main/VersionStorage/VersionStorage.cpp)
+        - [main.cpp](https://github.com/ddevigner/ab21-22/blob/main/Version/main.cpp)
+        - [Version.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/Version.hpp)
+        - [VersionExceptions.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/VersionExceptions.hpp)
+        - [SeqComparator.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/SeqComparator.hpp)
+    - Compilacion:
+        ```bash
+            g++ -std=c++11 main.cpp -o version
+        ```
+    - Uso:
+        - Seguir un nuevo fichero: 
+        ```bash
+            ./version follow <file>
+        ```
