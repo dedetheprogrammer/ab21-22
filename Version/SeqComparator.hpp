@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+
 enum Operation { INS, DEL, SUB, NON };
 std::map<Operation,std::string> Names {
     {INS, "+"}, {DEL, "-"}, {SUB, "="}, {NON, ""}
@@ -21,41 +22,35 @@ bool verbose = false;
 class SeqComparator {
 private:
 
-    int line;
-    std::string A, B;
-    std::vector<int> c;
-    std::vector<std::vector<Operation>> t;
-    struct change {
+    bool compressed_mode = false;
+    bool mode = false;
+    struct action {
         Operation op;
         std::string seq;
         int begin, end;
 
-        change() : op(NON), begin(0), end(0) {}
-        change(Operation op, int n) : op(op), begin(n), end(n) {}
-    } s;
-
-    bool mode;
-    std::string parsing, changes;
-
-    bool Analysis() {
-        if (!A.compare(B)) return 1;
-        else if (!A.compare("<nl>")) {
-            Save(!B.length() ? "-<nl>" : "+1:" + B);
-            return 1;
-        } else if (!B.compare("<nl>")) {
-            Save(!A.length() ? "+<nl>" : "-1:" + std::to_string(A.length()));
-            return 1;
-        } else if (A.length() && !B.length()) {
-            Save("-1:" + std::to_string(A.length()));
-            return 1;
-        } else if (B.length() && !A.length()) {
-            Save("+1:" + B);
-            return 1;
+        action(): op(NON), begin(0), end(0) {}
+        action(Operation op, char c, int n) : op(op), begin(n), end(n) {
+            seq = (c != '\0' ? std::string(1, c) : "");
         }
-        return 0;
-    }
 
-    void Compare() {
+        std::string to_string() {
+            std::string s = Names[op] + std::to_string(begin);
+            if (op == DEL) { if(begin != end) s += ":" + std::to_string(end); }
+            else s += ":" + seq;
+            return s;
+        }
+
+    } a;
+    std::string pa_str;
+    std::string ch_str;
+
+    std::string A, B;
+    std::vector<int> c;
+    std::vector<std::vector<Operation>> t;
+
+
+    void compare() {
         int c_prev, tmp, aux;
 
         for (int i = 1; i <= A.length(); i++) {
@@ -98,59 +93,63 @@ private:
             case NON: Resolve(i-1, j-1);
             }
         }
-    }*/
+    }
+    */
 
-    void Resolve(int i, int j) {
+    void resolve(int i, int j) {
         if(!i && !j) return;
-        else if(!i) { Resolve(0, j-1); Write(INS, B[j-1], i+1); }
-        else if(!j) { Resolve(i-1, 0); Write(DEL, '\0', i); }
-        else if(t[i-1][j-1] == DEL) { Resolve(i-1, j); Write(DEL, '\0', i); }
-        else if(t[i-1][j-1] == INS) { Resolve(i, j-1); Write(INS, B[j-1], i+1); }
-        else if(t[i-1][j-1] == SUB) { Resolve(i-1, j-1); Write(SUB, B[j-1], i); }
-        else Resolve(i-1, j-1);
+        else if(!i) { resolve(0, j-1); solution(INS, B[j-1], i+1); }
+        else if(!j) { resolve(i-1, 0); solution(DEL, '\0', i); }
+        else if(t[i-1][j-1] == DEL) { resolve(i-1, j); solution(DEL, '\0', i); }
+        else if(t[i-1][j-1] == INS) { resolve(i, j-1); solution(INS, B[j-1], i+1); }
+        else if(t[i-1][j-1] == SUB) { resolve(i-1, j-1); solution(SUB, B[j-1], i); }
+        else resolve(i-1, j-1);
     }
 
-    void Write(Operation op, char c, int n) {
-        //std::cout << Names[op] << c << n;
-        if (s.op != op) {
-            if (s.op != NON && s.op == DEL && s.begin != s.end) 
-                Save(":" + std::to_string(s.end));
-            s = change(op, n);
-            Save(Names[op] + std::to_string(n));
-            if (op != DEL) Save(":" + Parse(s.end - s.begin, c));
-        } else if (op == DEL) {
-            if (n - s.end != 1) {
-                if (s.begin != s.end) Save(":" + std::to_string(s.end));
-                Save("-" + std::to_string(n));
-                s = change(DEL, n);
-            } else s.end++;
-        } else if (op == INS) {
-            if (n - s.begin) {
-                Save("+" + std::to_string(n) + ":" + Parse(s.end - s.begin, c));
-                s = change(INS, n);
-            } else { s.end++; Save(Parse(s.end - s.begin, c)); }
+    void write(Operation op, char c, int n) {
+        std::string seq = (c != '\0' ? std::string(1,c) : "");
+        if (!mode) std::cout << Names[op] << seq << n << " ";
+        else ch_str += Names[op] + seq + std::to_string(n) + " ";
+    }
+    void solution(Operation op, char c, int n) {
+        if (compressed_mode) {
+            std::cout << Names[op] << c << n << std::endl;
+            std::cout << Names[a.op] << " " << a.begin << " " << a.end << std::endl;
+            if (a.op == NON) a = action(op, c, n);
+            else if (a.op != op) ch_str += a.to_string();
+            else if (op == DEL) {
+                if (n - a.end != 1) {
+                    ch_str += a.to_string();
+                    a = action(DEL, c, n);
+                    ch_str += "-" + std::to_string(n);
+                } else a.end++;
+            } else if (op == INS) {
+                if (n - a.begin) {
+                    ch_str += a.to_string();
+                    a = action(INS, c, n);
+                } else a.seq += Parse(a.end - a.begin, c);
+            } else if (op == SUB) {
+                if (n - a.end != 1) {
+                    ch_str += a.to_string();
+                    a = action(SUB, c, n);
+                } else { a.end++; a.seq += Parse(a.end - a.begin, c); }
+            }
         } else {
-            if (n - s.end != 1) {
-                Save("=" + std::to_string(s.end) + ":" + Parse(s.end - s.begin, c));
-                s = change(SUB, n);
-            } else { s.end++; Save(Parse(s.end - s.begin, c)); }
+            write(op, c, n);
         }
     }
 
-    void Save(std::string change) {
-        if (!mode) std::cout << change;
-        else changes += change;
-    }
-
     std::string Parse(int i, char c) {
-        if (c == '-') { parsing += std::to_string(i) + ","; return "<DEL>"; }
-        else if(c == '+') { parsing += std::to_string(i) + ","; return "<ADD>"; }
-        else if(c == '=') { parsing += std::to_string(i) + ","; return "<SUB>"; }
+        if (c == '-') { pa_str += std::to_string(i) + ","; return "<DEL>"; }
+        else if(c == '+') { pa_str += std::to_string(i) + ","; return "<ADD>"; }
+        else if(c == '=') { pa_str += std::to_string(i) + ","; return "<SUB>"; }
         else return std::string(1,c);
     }
 
 public:
-    SeqComparator(std::string A, std::string B) : A(A), B(B) {
+    SeqComparator(std::string A, std::string B, bool compress) : A(A), B(B) {
+        compressed_mode = compress;
+
         // -- Initiating costs table ------------------------------------------
         for (int j = 0; j <= B.length(); j++) { c.push_back(j); }
         // --------------------------------------------------------------------
@@ -159,32 +158,22 @@ public:
         t = std::vector<std::vector<Operation>>(A.length(), 
                 std::vector<Operation>(B.length()));
         // --------------------------------------------------------------------
-        //std::cout << std::endl;
     }
 
-
     void print() {
-        mode = 0;
-        // -- Resolve sequence comparison -------------------------------------
-        if (!Analysis()) {
-            Compare();
-            Resolve(A.length(), B.length());
-        }
-        // --------------------------------------------------------------------
+        compare();
+        resolve(A.length(), B.length());
         std::cout << "\n";
     }
 
     std::string to_string() {
-        mode = 1;
-        parsing = changes = "";
-        // -- Resolve sequence comparison -------------------------------------
-        if (!Analysis()) {
-            Compare();
-            Resolve(A.length(), B.length());
-        }
-        // --------------------------------------------------------------------
-        if (changes.empty()) return "";
-        if (parsing.empty()) return "! " + changes;
-        else return parsing.substr(0,parsing.length()-1) + " " + changes;
+        mode = true;
+        pa_str = "";
+        compare();
+        resolve(A.length(), B.length());
+        ch_str = a.to_string() + ch_str;
+        if (ch_str.empty()) return "";
+        if (pa_str.empty()) return "! " + ch_str;
+        else return pa_str.substr(0, pa_str.length()-1) + " " + ch_str;
     }
 };

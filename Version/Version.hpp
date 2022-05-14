@@ -1,9 +1,13 @@
 /******************************************************************************
- * 
+ * File: Version.hpp
+ * Description: implementation of a version manager storage.
+ * Author: Devid Dokash
+ * Version: v1.3
  ******************************************************************************
  * Source:
  * https://stackoverflow.com/a/42114477/17824234 (borrar una linea n de un fichero).
  *****************************************************************************/
+#pragma once
 #include <algorithm>
 #include <fstream>
 #include <iomanip>
@@ -17,6 +21,7 @@
 
 #include "SeqComparator.hpp"
 #include "VersionExceptions.hpp"
+#include "Utils.hpp"
 
 #ifdef WIN32
     #include <direct.h>
@@ -25,251 +30,228 @@
     #include <stdlib.h>
 #endif
 
-class Version {
-private: 
-    const std::string REGISTER = "version/version_register";
-    const std::string TMP = "version/tmp";
+class VersionStorage {
+    const std::string PATH = ".data/";
+    const std::string REGISTER = PATH + ".register";
+    const std::string TMP = PATH + "tmp";
 
-    std::string arg;
-    std::string path_file;
-    std::string name;
-    std::string extension;
-    std::string path;
-    std::string version_id;
-    int register_pos;
+    std::string time;
+    std::string date;
 
-    bool exists;
-    bool followed;
-    bool updated;
+    struct File {
+        std::string path_file = "";
+        std::string name = "";
+        std::string extension = "";
+        std::string path = "";
+        std::string version_id = "";
+        int register_pos = 0;
 
-    std::string register_time;
-    std::string register_date;
-    int current_version;
-    int last_version;
-    std::string last_modified_time;
-    std::string last_modified_date;
+        bool exists = false;
+        bool followed = false;
+        bool updated = false;
 
-    std::string timestamp() {
-        time_t t; std::time(&t);
-        char ts[256];
-        std::strftime(ts, sizeof ts, "%X %Z,%d-%m-%Y", std::localtime(&t));
-        return ts;
-    }
+        std::string register_time = "";
+        std::string register_date = "";
+        int current_version = 0;
+        int last_version = 0;
+        std::string last_modified_time = "";
+        std::string last_modified_date = "";
 
-    static std::vector<std::string> tokenize(std::string scope, const std::string patron, bool extrict, bool keep = false) {
-        std::regex re(patron);
-        if (keep) {
-            std::sregex_token_iterator s(scope.begin(), scope.end(), re, {-1,0});
-            std::vector<std::string> t;
-            remove_copy_if(s, std::sregex_token_iterator(), back_inserter(t), 
-                    [](std::string const &s) { return s.empty(); });
-            return t;
-        } else {
-            std::sregex_token_iterator s(scope.begin(), scope.end(), re, -1), e;
-            if (extrict) {
-                std::vector<std::string> t;
-                remove_copy_if(s, std::sregex_token_iterator(), back_inserter(t), 
-                        [](std::string const &s) { return s.empty(); });
-                return t;
-            } else return {s, e};
+        struct Changes {
+            std::string time;
+            std::string date;
+            std::string name;
+            std::string description;
+
+            Changes(std::string time, std::string date, std::string name, std::string description) {
+                this->time = time;
+                this->date = date;
+                this->name = name;
+                this->description = description;
+            }
+
+            Changes(std::vector<std::string> t) {
+                time = t[0];
+                date = t[1];
+                name = t[2];
+                description = t[3];
+            }
+
+            void print() {
+                std::cout << "\t#[" << time << " " << date << "] " << name 
+                    << ": " << (description.empty() ? "<empty>" : description) 
+                    << std::endl; 
+            }
+
+            std::string to_string() {
+                return "# " + time + "," + date + "," + name + "," + description;
+            }
+
+            bool operator==(const std::string& b) {
+                return !name.compare(b);
+            }
+        };
+        std::vector<Changes> vers;
+
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        // -- Constructors.
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        File() {}
+
+        File(std::string path_file, int p, std::string time, std::string date) : path_file(path_file) {
+            register_pos = p;
+            register_time = time;
+            register_date = date;
+            current_version = last_version = 1;
+            parse_path_file();
+            get_version_id();
         }
-    }
 
-    static std::string padding(int i, char c, int n) {
-        std::string s = std::to_string(i);
-        return std::string(n-s.length(), c).append(s);
-    }
-
-    void init() {
-        path_file = ""; 
-        name = ""; 
-        extension = "";
-        path = ""; 
-        version_id = ""; 
-        register_time = ""; 
-        register_date = "";
-        last_modified_time = "";
-        last_modified_date = "";
-        exists = false;
-        followed = false;
-        updated = false;
-        register_pos = 0;
-        current_version = 0;
-        last_version = 0;
-    }
-
-    void expand_path_file() {
-            char full_path[1024];
-        #ifdef WIN32
-            GetFullPathName(arg.c_str(), sizeof full_path, full_path, nullptr);
-        #else
-            realpath(arg.c_str(), full_path);
-        #endif
-        path_file = full_path;
-        struct stat info;
-        if (stat(full_path, &info) != 0 || !(info.st_mode & S_IFREG)) 
-            exists = 0;
-        else
-            exists = 1;
-    }
-
-    static std::vector<std::string> tokenize_register_info(std::string reg) {
-        std::vector<std::string> t = tokenize(reg, "[,]", 0);
-        for (int i = 8; i < t.size(); i++) t[7] += t[8];
-        return t;
-    }
-
-    void get_register_info() {
-        std::string reg = "";
-        std::ifstream in(REGISTER, std::ios::binary);
-        while (reg.find(path_file) == std::string::npos && getline(in, reg)) { 
-            if (reg[0] != '#') register_pos++; 
-        }
-        if (reg.find(path_file) != std::string::npos) {
-            std::vector<std::string> t = tokenize_register_info(reg);
-            register_time = t[0];
-            register_date = t[1];
+        File(std::vector<std::string> t, int p) {
+            path_file = t[7];
+            register_pos = p;
             followed = true;
             updated = (t[2][0] == '1' ? true : false);
+            register_time = t[0];
+            register_date = t[1];
             current_version = std::stoi(t[3]);
             last_version = std::stoi(t[4]);
             last_modified_time = t[5];
             last_modified_date = t[6];
-        } else followed = false;
-        in.close();
-    }
-
-    void get_register_info(int n) {
-        std::string reg = "";
-        std::ifstream in(REGISTER, std::ios::binary);
-        while (register_pos != n) 
-            if (reg[0] != '#') { getline(in, reg); register_pos++; }
-        if (register_pos == n && !reg.empty()) {
-            std::vector<std::string> t = tokenize_register_info(reg);
-            register_time = t[0];
-            register_date = t[1];
-            followed = true;
-            updated = (t[2][0] == '1' ? true : false);
-            current_version = std::stoi(t[3]);
-            last_version = std::stoi(t[4]);
-            last_modified_time = t[5];
-            last_modified_date = t[6];
-        } else followed = false;
-        in.close();
-    }
-
-    void remove_register() {
-        std::string line;
-        std::ifstream in(REGISTER, std::ios::binary); getline(in, line);
-        std::ofstream out(TMP, std::ios::binary);
-
-        for (int n = 1; !in.eof(); n++) {
-            if (n != register_pos) {
-                out << line + "\n";
-                while (getline(in, line) && line[0] == '#') out << line + "\n";
-            } else
-                while (getline(in, line) && line[0] == '#');
+            parse_path_file();
+            get_version_id();  
         }
 
-        in.close(); out.close();
-        remove(REGISTER.c_str());
-        rename(TMP.c_str(), REGISTER.c_str());
-    }
+        void update_file(std::string time, std::string date, std::string name, std::string comment) {
+            for (; last_version != current_version; last_version) vers.pop_back();
+            if (name.empty()) name = "VERSION_" + std::to_string(current_version+1); 
+            vers.push_back(Changes(time, date, name, comment));
+            last_modified_time = time; 
+            last_modified_date = date;
+            current_version++;
+            last_version++;
+        }
 
-    void update_register(std::string ts, std::string version_name, std::string comment) {
-        // -- Modified register info ------------------------------------------
-        current_version++;
-        std::string modified_register = register_time + "," + register_date + ",1,"
-            + std::to_string(current_version) + "," + std::to_string(current_version) 
-            + "," + ts + "," + path_file;
+        void update_time(std::string time, std::string date) {
+            last_modified_time = time;
+            last_modified_date = date;
+        }
 
-        // -- New version register --------------------------------------------
-        std::string new_version = "# " + ts + ",";
-        if (!version_name.empty()) new_version += version_name;
-        else new_version += "Version_" + std::to_string(current_version);
-        if (!comment.empty()) new_version += "," + comment; 
-
-        std::string line;
-        std::ifstream in(REGISTER, std::ios::binary); getline(in, line);
-        std::ofstream out(TMP, std::ios::binary);
-        for (int i = 1; !in.eof(); i++) {
-            if (i != register_pos) {
-                out << line + "\n";
-                while (getline(in, line) && line[0] == '#') out << line + "\n";
-            } else {
-                out << modified_register + "\n";
-                for (int j = 1; getline(in, line) && line[0] == '#'; j++)
-                    if (j < current_version) out << line + "\n";
-                out << new_version + "\n";
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        // -- Parses file path.
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        void parse_path_file() {
+            int fof = path_file.find_last_of("/\\");
+            path = path_file.substr(0, fof);
+            name = path_file.substr(fof + 1);
+            fof = name.find_last_of('.');
+            if (fof != std::string::npos) {
+                name = name.substr(0, fof);
+                extension = name.substr(fof);
             }
         }
-        
-        in.close(); out.close();
-        remove(REGISTER.c_str());
-        rename(TMP.c_str(), REGISTER.c_str());
-    }
 
-    void restore_register(std::string ts) {
-        // -- Modified register info ------------------------------------------
-        std::string modified_register = register_time + "," + register_date + ",1,"
-            + std::to_string(current_version) + "," + std::to_string(last_version) 
-            + "," + ts + "," + path_file;
-
-        std::string line;
-        std::ifstream in(REGISTER, std::ios::binary); getline(in, line);
-        std::ofstream out(TMP, std::ios::binary);
-        for (int i = 1; !in.eof(); i++) {
-            if (i != register_pos) out << line + "\n";
-            else out << modified_register + "\n";
-            while (getline(in, line) && line[0] == '#') out << line + "\n";
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        // -- Generates file version id.
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        void get_version_id() {
+            std::vector<std::string> t = tokenize(path, "[\\\\/]", true);
+            for (auto &i : t) version_id += i[0];
+            version_id += "_" + name + extension;
         }
-        
-        in.close(); out.close();
-        remove(REGISTER.c_str());
-        rename(TMP.c_str(), REGISTER.c_str());
-    }
 
-    void parse_path_file() {
-        int aux = path_file.find_last_of("/\\");
-        path = path_file.substr(0, aux);
-        name = path_file.substr(aux+1);
-        aux = name.find_last_of('.');
-        if (aux != std::string::npos) {
-            name = name.substr(0, aux);
-            extension = name.substr(aux);
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        // -- To string.
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        std::string to_string() {
+            std::string f_str = register_time + "," + register_date + ",1," 
+                + std::to_string(current_version) + "," 
+                + std::to_string(last_version) + "," + last_modified_time 
+                + "," + last_modified_date + "," + path_file + "\n";
+            for (auto &c : vers) f_str += c.to_string() + "\n"; 
+            return f_str;
         }
-    }
 
-    static void parse_path_file(std::string path_file, std::string* path, 
-            std::string* name, std::string* ext) {
-        int aux = path_file.find_last_of("/\\");
-        *path = path_file.substr(0, aux);
-        *name = path_file.substr(aux+1);
-        aux = (*name).find_last_of('.');
-        if (aux != std::string::npos && ext != nullptr) {
-            *name = (*name).substr(0, aux);
-            *ext = (*name).substr(aux);
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        // -- Prints file.
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        void print() {
+            std::cout << "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+\n";
+            std::cout << "|                 FILE INFO                 |\n";
+            std::cout << "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+\n";
+            std::cout << "> Full path:\t\t" << path_file << "\n";
+            std::cout << "> Only path:\t\t" << path << "\n";
+            std::cout << "> Only name:\t\t" << name << "\n";
+            std::cout << "> Only ext:\t\t" << extension << "\n";
+            std::cout << "> Version id:\t\t" << version_id << "\n";
+            std::cout << "> Register pos:\t\t" << register_pos << "\n";
+            std::cout << "> Exists?\t\t" << (exists ? "YES" : "NO") << "\n";
+            std::cout << "> Is followed?\t\t" << (followed ? "YES" : "NO") << "\n";
+            std::cout << "> Is updated?\t\t" << (updated ? "YES" : "NO") << "\n";
+            std::cout << "> Register time:\t" << register_time << "\n";
+            std::cout << "> Register date:\t" << register_date << "\n";
+            std::cout << "> Current version:\t" << current_version << "\n";
+            std::cout << "> Last version:\t\t" << last_version << "\n";
+            std::cout << "> Last update time:\t" << last_modified_time << "\n";
+            std::cout << "> Last update date:\t" << last_modified_date << "\n";
+            std::cout << "> Versions:\n";
+            for (auto &v : vers) v.print(); 
         }
+
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        // -- Beautifies file.
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        void beautify() {
+            std::cout << std::setw(4) << register_pos   // #.
+                << std::setw(15) << version_id          // Id.
+                << std::setw(15) << name                // File.
+                << std::setw(7)  << (updated ? "YES" : "NO") 
+                << std::setw(8)  << current_version     // Current version.
+                << std::setw(8)  << last_version        // Last version.
+                << path_file << "\n"                    // Path.
+                << "  Follow: " << register_time + " " + register_date + "\n"
+                << "  Modify: " << last_modified_time + " " + last_modified_date
+                << std::endl;
+        }
+
+        std::string next_version_file() {
+            return ".data/" + version_id + "_" + padding(current_version+1, '0', 5) 
+                + "__";
+        }
+
+        std::vector<Changes>::iterator find_version(std::string name) {
+            return std::find(vers.begin(), vers.end(), name);
+        }
+
+
+        bool operator==(const std::string& b) {
+            return !path_file.compare(b);
+        }
+    };
+    int n_files;
+    std::vector<File> files;
+
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- FILE SYSTEM                                                       --
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Checks if file exists.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    bool exists_file(std::string path_file) {
+        struct stat tst;
+        if (stat(path_file.c_str(), &tst) != 0 || !(tst.st_mode & S_IFREG)) return false;
+        else return true;
     }
 
-    void get_version_id() {
-        std::vector<std::string> t = tokenize(path, "[\\\\/]", true);
-        for (auto &i : t) version_id += i[0];
-        version_id += "_" + name + extension;
-    }
-
-    static std::string get_version_id(std::string path, std::string name) {
-        std::string version_id = "";
-        std::vector<std::string> t = tokenize(path, "[\\\\/]", true);
-        for (auto &i : t) version_id += i[0];
-        return version_id + "_" + name;
-    }
-
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Backups a file.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     void backup_file(std::string src_f, std::string dst_f, bool append = false, bool destroy = false) {
         std::ifstream src;
         if (!append) src = std::ifstream(src_f, std::ios::binary | std::ios_base::app);
         else src = std::ifstream(src_f, std::ios::binary);
-        
+
         std::ofstream dst(dst_f, std::ios::binary);
         dst << src.rdbuf();
 
@@ -277,155 +259,92 @@ private:
         if (destroy) remove(src_f.c_str());
     }
 
-
-
-    void beautify() {
-        std::cout << "> #" << register_pos << " " << (name + extension) << " " << path << " " << register_time << " " << register_time 
-                << " " << (updated ? "YES" : "NO") << " " << current_version << " " << last_version << " " << last_modified_time << " " << last_modified_date;
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Expands path-file.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    std::string expand_path_file(std::string rel_path) {
+        char full_path[1024];
+        #ifdef WIN32
+            GetFullPathName(rel_path.c_str(), sizeof full_path, full_path, nullptr);
+        #else
+            realpath(rel_path.c_str(), full_path);
+        #endif
+        return full_path;
     }
 
-    void print() {
-        std::cout << "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+\n";
-        std::cout << "|                 FILE INFO                 |\n";
-        std::cout << "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+\n";
-        std::cout << "> Given arg:\t\t" << arg << "\n";
-        std::cout << "> Full path:\t\t" << path_file << "\n";
-        std::cout << "> Only path:\t\t" << path << "\n";
-        std::cout << "> Only name:\t\t" << name << "\n";
-        std::cout << "> Only ext:\t\t" << extension << "\n";
-        std::cout << "> Version id:\t\t" << version_id << "\n";
-        std::cout << "> Register pos:\t\t" << register_pos << "\n";
 
-        std::cout << "> Exists?\t\t" << (exists ? "YES" : "NO") << "\n";
-        std::cout << "> Is followed?\t\t" << (followed ? "YES" : "NO") << "\n";
-        std::cout << "> Is updated?\t\t" << (updated ? "YES" : "NO") << "\n";
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- REGISTER FUNCTIONS                                                --
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-        std::cout << "> Register time:\t" << register_time << "\n";
-        std::cout << "> Register date:\t" << register_date << "\n";
-        std::cout << "> Current version:\t" << current_version << "\n";
-        std::cout << "> Last version:\t\t" << last_version << "\n";
-        std::cout << "> Last update time:\t" << last_modified_time << "\n";
-        std::cout << "> Last update date:\t" << last_modified_date << "\n";
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Parses the register file info for later manipulation.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    std::vector<std::string> tokenize_register(std::string reg) {
+        std::vector<std::string> t = tokenize(reg, "[,]", 0);
+        for (int i = 8; i < t.size(); i++) t[7] += t[i];
+        return t;
     }
 
-public:
-    Version() {
-        init();
-    }
+    std::vector<std::string> tokenize_version(std::string ver) {
+        int fof;
+        std::vector<std::string> t;
 
-    Version(int n) {
-        init();
-        expand_path_file();
-        get_register_info(n);
-        parse_path_file();
-        get_version_id();
-        //print();
-    }
-
-    Version(std::string arg) : arg(arg) {
-        init();
-        expand_path_file();
-        get_register_info();
-        parse_path_file();
-        get_version_id();
-        print();
-    }
-
-    static void Init() {
-        struct stat info;
-        if(stat("version", &info ) != 0 || info.st_mode & S_IFREG) {
-            #ifdef WIN32
-                _mkdir("version");
-            #else
-                //mode_t mode = 0755;
-                mkdir("version", mode_t(0755));
-            #endif
-            std::ofstream out("version/version_register", std::ios::binary);
+        ver = ver.substr(2);
+        for (int i = 0; i < 3; i++) {
+            fof = ver.find_first_of(",");
+            t.push_back(ver.substr(0, fof));
+            ver = ver.substr(fof+1);
         }
+        t.push_back(ver);
+        return t;
     }
 
-    void Check() {
-        // Sin implementar. Proximamente.
-    }
-
-    void Follow() {
-        try {
-            if (!exists) throw file_not_found(arg);
-            if (followed) throw file_already_followed(arg);
-        
-            backup_file(path_file, "version/" + version_id);
-            std::ofstream reg(REGISTER, std::ios::binary | std::ios_base::app);
-            reg << timestamp() << ",1,1,1,,," <<  path_file << std::endl;
-            reg.close();
-
-        } catch (file_not_found e) {
-            std::cerr << e.what() << std::endl;
-        } catch (file_already_followed e) {
-            std::cerr << e.what() << std::endl;
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Reads and saves register info.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    void read_register() {
+        std::string line = "";
+        std::ifstream in(REGISTER, std::ios::binary);
+        while (getline(in, line)) {
+            if (line[0] != '#')
+                files.push_back(File(tokenize_register(line), ++n_files));
+            else 
+                files.back().vers.push_back(File::Changes(tokenize_version(line)));
         }
-    }
-
-    static void Log() {
-        std::string reg = "";
-        std::ifstream in("version/version_register", std::ios::binary);
-        std::cout << std::left
-            << std::setw(4) << "#"
-            << std::setw(15) << "Version id"
-            << std::setw(15) << "File"
-            << std::setw(7) << "Upd*"
-            << std::setw(8) << "Curr*"
-            << std::setw(8) << "Last*"
-            << "Path\n";
-
-        for (int i = 1; getline(in, reg); ) { 
-            if (reg[0] != '#') {
-                std::string name;
-                std::vector<std::string> t = tokenize_register_info(reg);
-                parse_path_file(t[7], &t[7], &name, nullptr);
-                std::cout << std::setw(4) << i                          // #.
-                    << std::setw(15) << get_version_id(t[7], name)      // Id.
-                    << std::setw(15) << name                            // File.
-                    << std::setw(7)  << (t[2][0] == '1' ? "YES" : "NO") 
-                    << std::setw(8)  << t[3]    // Current version.
-                    << std::setw(8)  << t[4]    // Last version.
-                    << t[7] << "\n"             // Path.
-                    << "  Follow: " << t[0] + " " + t[1] + "\n"
-                    << "  Modify: " << t[5] + " " + t[6] + "\n";
-                i++;
-            }
-        }
-        std::cout << "\n--\n"
-            << "*Upd: Update. all changes of file are saved. Not implemented.\n"
-            << "*Curr: Current version. Current version of file in system.\n"
-            << "*Last: Last version. Last version of file available in system.\n"
-            << "\n--\n";
         in.close();
     }
 
-    void Remove() {
-        try {
-            if (!followed) throw file_not_followed(arg);
-            remove_register();
-            remove(("version/" + version_id).c_str());
-            remove(("version/" + version_id + "_" + 
-                padding(current_version, '0', 5) + "__").c_str());
-        } catch (file_not_followed e) {
-            std::cerr << e.what() << std::endl;
-        }
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Rewrites register info.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    void rewrite_register() {
+        std::ofstream out(REGISTER, std::ios::binary);
+        for(auto &i : files) out << i.to_string();
+        out.close();
     }
 
-    void Restore(std::string version) {
-        // Sin implementar. Proximamente.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Checks if file is followed.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    std::vector<File>::iterator find_file(std::string arg) {
+        return std::find(files.begin(), files.end(), arg);
     }
 
+    void parse_version_timestamp(std::string ts) {
+        int fof = ts.find_first_of(",");
+        time = ts.substr(0,fof);
+        date = ts.substr(fof+2);
+    }
 
-    std::string substr(std::string& s, std::string pattern) {
-        int fof = s.find_first_of(pattern);
-        if (fof != std::string::npos) {
-            std::string sub = s.substr(0, fof);
-            s = s.substr(fof+1);
-            return sub;
-        } else return "";
+    bool valid_desc(std::string desc) {
+        return (desc.length() < 150);
+    }
+
+    bool valid_name(std::string name) {
+        if (name.empty()) return true;
+        std::regex re("([A-Z]|[a-z]|_|[0-9])*");
+        return std::regex_match(name, re);
     }
 
     std::string unparse(std::vector<std::string> mods, std::string seq) {
@@ -456,20 +375,17 @@ public:
     }
 
     void a_link_to_the_past(std::string changes_str, int& line, std::ifstream& sav, std::ofstream& dst) {
-        // Los preliminares.
         int target = stoi(substr(changes_str, " ").substr(3));
         std::string mods_str = substr(changes_str, " ");
         std::vector<std::string> mods;
         if (mods_str[0] != '!') mods = tokenize(mods_str, ",", 1);
-        std::cout << "LINE TARGET: " << target << std::endl;
-        std::cout << "MODS: " << mods_str << std::endl;
 
         std::string lwac; // Line with applied changes.
         std::vector<std::string> changes = tokenize(changes_str, "(\\+|\\-|\\=)", 0, 1);
-
         for (; getline(sav, lwac) && line != target; line++) dst << lwac << "\n";
         if (line != 1 && sav.eof()) lwac = "";
         for (auto c = changes.rbegin(); c != changes.rend(); c += 2) {
+            
             int fof = (*c).find_first_of(":"), fst;
             std::string seq;
 
@@ -481,7 +397,7 @@ public:
                 seq = "1";
             }
   
-            if ((*(c + 1))[0] == '-') lwac.erase(fst - 1, stoi(seq));
+            if ((*(c + 1))[0] == '-') lwac.erase(fst - 1, stoi(seq) - (fst-1));
             else {
                 seq = unparse(mods, seq);
                 if ((*(c + 1))[0] == '+') lwac.insert(fst - 1, seq);
@@ -491,130 +407,268 @@ public:
         }
     }
 
-    void Restore(int version) {
+public:
+    VersionStorage() : n_files(0) {
+        parse_version_timestamp(timestamp());
+        read_register();
+    }
+
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Inits Version System: creates its folder.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    void Init() {
+        struct stat v;
+        if (stat(PATH.c_str(), &v) != 0 || v.st_mode & S_IFREG) {
+            #ifdef WIN32
+                _mkdir(PATH.c_str());
+            #else
+                mkdir(PATH.c_str(), mode_t(0755));
+            #endif
+            std::ofstream out(REGISTER, std::ios::binary);
+        }
+    }
+
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Adds new file to the register.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    void Follow(std::string arg) {
         try {
-            if (current_version == version) return;
+            if (!exists_file(arg)) throw file_not_found(arg);
+            if (find_file(expand_path_file(arg)) != files.end()) throw file_already_followed(arg);
 
+            File f(expand_path_file(arg), files.size()+1, date, time);
+            files.push_back(f);
+            backup_file(arg, PATH + f.version_id);
 
-            int line = 1;
-            std::string changes_file, otou, utoo, ts = timestamp();
-            std::ifstream sav("version/" + version_id, std::ios::binary);
-            std::ofstream dst(arg, std::ios::binary);
-
-            // -- Si se quiere recuperar una version posterior.
-            if (current_version < version) {
-                if (version > last_version) throw version_not_found(version);
-                for (; current_version < version; current_version++) {
-                    changes_file = "version/" + version_id + "_" + 
-                        padding(current_version+1, '0', 5) + "__";
-                    std::ifstream in(changes_file, std::ios::binary);
-                    for (; getline(in, otou) && getline(in, utoo); ) {
-                        std::cout << otou << std::endl;
-                        a_link_to_the_past(otou, line, sav, dst);
-                    }
-                    in.close();
-                }
-            } else {
-                // -- Si se quiere recuperar una version anterior.
-                for (; current_version > version; current_version--) {
-                    changes_file = "version/" + version_id + "_" + 
-                        padding(current_version, '0', 5) + "__";
-                    std::ifstream in(changes_file, std::ios::binary);
-                    for (; getline(in, otou) && getline(in, utoo); ) {
-                        std::cout << utoo << std::endl;
-                        a_link_to_the_past(utoo, line, sav, dst);
-                    }
-                    in.close();
-                }
-            }
-            sav.close(); dst.close();
-
-            restore_register(ts);
-            backup_file(arg, "version/" + version_id);
-
-        } catch (version_not_found e) {
+            rewrite_register();
+        } catch (file_not_found e) {
+            std::cerr << e.what() << std::endl;
+        } catch (file_already_followed e) {
             std::cerr << e.what() << std::endl;
         }
     }
 
-    void See() {
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Displays followed files or information about one an especific line.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    void Log(std::string arg) {
+        try {
+            if (arg.empty()) {
+                std::cout << std::left
+                    << std::setw(4) << "#"
+                    << std::setw(15) << "Version id"
+                    << std::setw(15) << "File"
+                    << std::setw(7) << "Upd*"
+                    << std::setw(8) << "Curr*"
+                    << std::setw(8) << "Last*"
+                    << "Path\n";
+                for (auto &i : files) i.beautify();
+                std::cout << "\n+-+-+\n"
+                    << " *Upd: all changes of file are saved. Not implemented.\n"
+                    << " *Curr: current version of file in system.\n"
+                    << " *Last: last version of file available in system.\n"
+                    << "+-+-+\n";
+            } else {
+                auto f = find_file(expand_path_file(arg));
+                if (f == files.end()) throw file_not_followed(arg);
+                (*f).print();
+            }
+        } catch (file_not_followed e) {
+            std::cerr << e.what() << std::endl;
+        }
+    }
+
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Removes the given file of being followed: remove its entry in the 
+    // -- register and every file related (changes and sav).
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    void Remove(std::string arg) {
+        try {
+            auto f = find_file(expand_path_file(arg)); 
+            if (f == files.end()) throw file_not_followed(arg);
+            files.erase(f);
+            remove((PATH + f->version_id).c_str());
+            for (int v = 2; v <= f->last_version; v++) {
+                remove((PATH + f->version_id + "_" + padding(v,'0',5) 
+                    + "__").c_str());
+            }
+            rewrite_register();
+        } catch (file_not_followed e) {
+            std::cerr << e.what() << std::endl;
+        }
+    }
+
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Restores given file's given version.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    void Restore(std::string arg, int version) {
+        try {
+            auto f = find_file(expand_path_file(arg));
+            if (f == files.end()) throw file_not_followed(arg);
+            if (f->current_version == version) return;
+
+            int line = 1;
+            std::string changes_file, otou, utoo;
+            std::ifstream in(PATH + f->version_id, std::ios::binary);
+            std::ofstream out(arg, std::ios::binary);
+
+            // -- Later version -----------------------------------
+            if (f->current_version < version) {
+                if (version > f->last_version) throw version_not_found(version);
+                for (; f->current_version < version; f->current_version++) {
+                    changes_file = PATH + f->version_id + "_" 
+                        + padding(f->current_version+1, '0', 5) + "__";
+                    std::ifstream ch(changes_file, std::ios::binary);
+                    for(; getline(ch, otou) && getline(ch, utoo);)
+                        a_link_to_the_past(otou, line, in, out);
+                    ch.close();
+                }
+                while(getline(in, changes_file)) out << changes_file << "\n";
+            } else {
+                for (; f->current_version > version; f->current_version--) {
+                    changes_file = PATH + f->version_id + "_" 
+                        + padding(f->current_version, '0', 5) + "__";
+                    std::ifstream ch(changes_file, std::ios::binary); 
+                    for(; getline(ch, otou) && getline(ch, utoo);)
+                        a_link_to_the_past(utoo, line, in, out);
+                    ch.close();   
+                }
+                while(getline(in, changes_file)) out << changes_file << "\n";
+            }
+            in.close();
+            out.close();
+
+            f->update_time(time, date);
+            backup_file(arg, PATH + f->version_id);
+            rewrite_register();
+
+        } catch (file_not_followed e) {
+            std::cerr << e.what() << std::endl;
+        } catch (version_not_found e) {
+            std::cerr << e.what() << std::endl;
+        }
 
     }
 
-    void Update(std::string version_name, std::string comment) {
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Displays the saved content of the given file if followed.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    void See(std::string arg) {
         try {
-            if (!followed) throw file_not_followed(arg);
-            if (!exists) throw file_not_found(arg);
+            auto i = find_file(expand_path_file(arg)); 
+            if (i == files.end()) throw file_not_followed(arg);
 
-            bool first_change = true;
-            std::string changes_file = "version/" + version_id + "_" + 
-                padding(current_version+1, '0', 5) + "__", ts = timestamp(), aux;
+            char key = '\0';
+            std::string line;
+            std::ifstream in(PATH + (*i).version_id, std::ios::binary);
+            std::cout << "+-+-+\n";
+            while (getline(in, line)) std::cout << line << std::endl;
+            std::cout << "+-+-+\n";
+        } catch (file_not_followed e) {
+            std::cerr << e.what() << std::endl;
+        }
+    }
 
-            // -- Saved file -----------------------------------------------
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Updates given file and saves its current changes respect to the saved 
+    // -- one.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    void Update(std::string arg, std::string name, std::string description) {
+        try {
+            auto f = find_file(expand_path_file(arg));
+            if (f == files.end()) throw file_not_followed(arg);
+            if (!exists_file(arg)) throw file_not_found(arg);
+            if (!valid_name(name)) throw version_name_not_valid(name);
+            if (f->find_version(name) != f->vers.end()) throw already_named_version(arg, name);
+            if (!valid_desc(description)) throw too_long_description();
+
+            int result;
+            bool has_changes = true;
+            std::string changes_file = PATH + f->version_id + "_" 
+                + padding(f->current_version+1, '0', 5) + "__";
+
+            // -- Saved file --------------------------------------------------
             std::string a;
-            std::ifstream A("version/" + version_id, std::ios::binary);
-            
+            std::ifstream A(PATH + f->version_id, std::ios::binary);
+
             // -- Updated file ------------------------------------------------
             std::string b;
             std::ifstream B(arg, std::ios::binary);
-            
+
             std::ofstream out(changes_file, std::ios::binary | std::ios_base::app);
             for (int l = 1; !A.eof() || !B.eof(); l++) {
                 a = b = "";
                 getline(A, a); getline(B, b);
-                // Hay que mirarlo (!!!).
                 a = std::regex_replace(a, std::regex("\\r"), "");
                 b = std::regex_replace(b, std::regex("\\r"), "");
-                if (!A.eof() && a.empty()) a = "<nl>";
-                if (!B.eof() && b.empty()) b = "<nl>";
-                // (!!!).
+                if (!A.eof() && a.empty()) a = "<!>";
+                if (!B.eof() && b.empty()) b = "<!>";
 
-                // -- Cambios actuales ----------------------------------------
-                SeqComparator AB(a, b);
-                aux = AB.to_string();
-                if (!aux.empty()) {
-                    if (first_change) first_change = 0;
-                    out << ">>@" << l << " " << aux << std::endl;   
+                if (!pre_analysis(a, b)) {
+                    has_changes = true;
+
+                    SeqComparator AB(a, b, true);
+                    out << ">>@" << l << " " << AB.to_string() << std::endl;
+
+                    SeqComparator BA(b, a, true);
+                    out << "<<@" << l << " " << BA.to_string() << std::endl;
+
+                } else {
+                    if(result == 1) has_changes = true;
                 }
-                // ------------------------------------------------------------
-
-                // -- Cambios para volver a una version anterior --------------
-                SeqComparator BA(b, a);
-                aux = BA.to_string();
-                if (!aux.empty()) out << "<<@" << l << " " << aux << std::endl;
-                // ------------------------------------------------------------
             }
             A.close();
             B.close();
             out.close();
 
-            if (!first_change) {
-                update_register(ts, version_name, comment);
-                backup_file(arg, "version/" + version_id);
+            if (has_changes) {
+                f->update_file(time, date, name, description);
+                backup_file(arg, PATH + f->version_id);
+                rewrite_register();
             } else remove(changes_file.c_str());
-            
+
         } catch (file_not_followed e) {
             std::cerr << e.what() << std::endl;
         } catch (file_not_found e) {
             std::cerr << e.what() << std::endl;
+        } catch (version_name_not_valid e) {
+            std::cerr << e.what() << std::endl;
+        } catch (already_named_version e) {
+            std::cerr << e.what() << std::endl;
+        } catch (too_long_description e) {
+            std::cerr << e.what() << std::endl;
         }
     }
 
-    void operator=(const Version& v) {
-        this->path_file = v.path_file; 
-        this->name = v.name; 
-        this->extension = v.extension;
-        this->path = v.path; 
-        this->version_id = v.version_id; 
-        this->register_time = v.register_time; 
-        this->register_date = v.register_date;
-        this->last_modified_time = v.last_modified_time;
-        this->last_modified_date = v.last_modified_date;
-        this->exists = v.exists;
-        this->followed = v.followed;
-        this->updated = v.updated;
-        this->register_pos = v.register_pos;
-        this->current_version = v.current_version;
-        this->last_version = v.last_version;
+    bool pre_analysis(std::string& a, std::string& b) {
+        if (!a.compare(b)) { a = b = ""; return true; }
+        else if(!a.compare("<!>")) {
+            if (b.empty()) {
+                a = "+<nl>";
+                b = "-<nl>";
+            } else {
+                a = "-1:" + std::to_string(b.length());
+                b = "+1:" + b; 
+            }
+            return true;
+        } else if (!b.compare("<!>")) {
+            if (a.empty()) {
+                a = "-<nl>";
+                b = "+<nl>";
+            } else {
+                a = "+1:" + a;
+                b = "-1:" + std::to_string(a.length());
+            }
+            return true;
+        } else if (!a.empty()) {
+            a = "+1:" + a;
+            b = "-1:" + std::to_string(a.length());
+            return true;
+        } else {
+            a = "-1:" + std::to_string(b.length());
+            b = "+1:" + b;
+            return true;
+        }
+        return 0;
     }
 };

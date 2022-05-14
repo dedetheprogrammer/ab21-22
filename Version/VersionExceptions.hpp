@@ -92,3 +92,42 @@ struct bad_arguments_number : public std::exception {
     	return msg.c_str();
     }
 };
+
+struct version_name_not_valid : public std::exception {
+
+    std::string name;
+    std::string msg;
+
+    version_name_not_valid(std::string name) : name(name) {
+        msg = "version: error: given name \'" + name + "\' contains invalid " +
+            "symbols. Valid symbols: alphanumeric, \'_\'";
+    } 
+
+	const char * what () const throw () {
+    	return msg.c_str();
+    }
+};
+
+struct already_named_version : public std::exception {
+
+    std::string msg;
+
+    already_named_version(std::string file, std::string name) {
+        msg = "version: error: there is already a version named \'" + name 
+            + "\' in file \'" + file + "\'.";
+    } 
+
+	const char * what () const throw () {
+    	return msg.c_str();
+    }
+};
+
+struct too_long_description : public std::exception {
+
+    too_long_description() {} 
+
+	const char * what () const throw () {
+    	return "version: error: descriptions have a max length of 150 symbols.";
+    }
+};
+
