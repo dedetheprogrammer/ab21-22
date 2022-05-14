@@ -146,8 +146,8 @@ class VersionStorage {
             name = path_file.substr(fof + 1);
             fof = name.find_last_of('.');
             if (fof != std::string::npos) {
-                name = name.substr(0, fof);
                 extension = name.substr(fof);
+                name = name.substr(0, fof);
             }
         }
 
@@ -385,26 +385,26 @@ class VersionStorage {
         for (; getline(sav, lwac) && line != target; line++) dst << lwac << "\n";
         if (line != 1 && sav.eof()) lwac = "";
         for (auto c = changes.rbegin(); c != changes.rend(); c += 2) {
-            
             int fof = (*c).find_first_of(":"), fst;
             std::string seq;
 
             if (fof != std::string::npos) {
-                fst = stoi((*c).substr(0, fof));
+                fst = stoi((*c).substr(0, fof))-1;
                 seq = (*c).substr(fof + 1);
             } else {
-                fst = stoi((*c));
+                fst = stoi((*c))-1;
                 seq = "1";
             }
   
-            if ((*(c + 1))[0] == '-') lwac.erase(fst - 1, stoi(seq) - (fst-1));
+            if ((*(c + 1))[0] == '-') lwac.erase(fst, stoi(seq) - fst);
             else {
                 seq = unparse(mods, seq);
-                if ((*(c + 1))[0] == '+') lwac.insert(fst - 1, seq);
-                else if ((*(c + 1))[0] == '=') lwac.replace(fst - 1, seq.length(), seq);
+                if ((*(c + 1))[0] == '+') lwac.insert(fst, seq);
+                else if ((*(c + 1))[0] == '=') lwac.replace(fst, seq.length(), seq);
             }
-            dst << lwac << "\n";
         }
+        dst << lwac;
+        line++;
     }
 
 public:
@@ -434,7 +434,8 @@ public:
     void Follow(std::string arg) {
         try {
             if (!exists_file(arg)) throw file_not_found(arg);
-            if (find_file(expand_path_file(arg)) != files.end()) throw file_already_followed(arg);
+            if (find_file(expand_path_file(arg)) != files.end()) 
+                throw file_already_followed(arg);
 
             File f(expand_path_file(arg), files.size()+1, date, time);
             files.push_back(f);
@@ -582,10 +583,9 @@ public:
             if (f->find_version(name) != f->vers.end()) throw already_named_version(arg, name);
             if (!valid_desc(description)) throw too_long_description();
 
-            int result;
-            bool has_changes = true;
+            bool has_changes = false;
             std::string changes_file = PATH + f->version_id + "_" 
-                + padding(f->current_version+1, '0', 5) + "__";
+                + padding(f->current_version+1, '0', 5) + "__", aux; 
 
             // -- Saved file --------------------------------------------------
             std::string a;
@@ -601,20 +601,22 @@ public:
                 getline(A, a); getline(B, b);
                 a = std::regex_replace(a, std::regex("\\r"), "");
                 b = std::regex_replace(b, std::regex("\\r"), "");
-                if (!A.eof() && a.empty()) a = "<!>";
-                if (!B.eof() && b.empty()) b = "<!>";
 
-                if (!pre_analysis(a, b)) {
+                aux = pre_analysis(a, b);
+                if (aux[0] != '=') {
                     has_changes = true;
+                    if (aux[0] != '!') {
+                        out << ">>@" << l << " " << aux << "\n";
 
-                    SeqComparator AB(a, b, true);
-                    out << ">>@" << l << " " << AB.to_string() << std::endl;
+                        aux = pre_analysis(b, a);
+                        out << "<<@" << l << " " << aux << "\n";
+                    } else {
+                        SeqComparator AB(a, b, true);
+                        out << ">>@" << l << " " << AB.to_string() << "\n";
 
-                    SeqComparator BA(b, a, true);
-                    out << "<<@" << l << " " << BA.to_string() << std::endl;
-
-                } else {
-                    if(result == 1) has_changes = true;
+                        SeqComparator BA(b, a, true);
+                        out << "<<@" << l << " " << BA.to_string() << "\n";
+                    }
                 }
             }
             A.close();
@@ -640,35 +642,10 @@ public:
         }
     }
 
-    bool pre_analysis(std::string& a, std::string& b) {
-        if (!a.compare(b)) { a = b = ""; return true; }
-        else if(!a.compare("<!>")) {
-            if (b.empty()) {
-                a = "+<nl>";
-                b = "-<nl>";
-            } else {
-                a = "-1:" + std::to_string(b.length());
-                b = "+1:" + b; 
-            }
-            return true;
-        } else if (!b.compare("<!>")) {
-            if (a.empty()) {
-                a = "-<nl>";
-                b = "+<nl>";
-            } else {
-                a = "+1:" + a;
-                b = "-1:" + std::to_string(a.length());
-            }
-            return true;
-        } else if (!a.empty()) {
-            a = "+1:" + a;
-            b = "-1:" + std::to_string(a.length());
-            return true;
-        } else {
-            a = "-1:" + std::to_string(b.length());
-            b = "+1:" + b;
-            return true;
-        }
-        return 0;
+    std::string pre_analysis(std::string a, std::string b) {
+        if (!a.compare(b)) return "=";
+        else if (!a.empty() && b.empty()) return "-1:" + std::to_string(a.length());
+        else if (!b.empty() && a.empty()) return "+1:" + b;
+        return "!";
     }
 };

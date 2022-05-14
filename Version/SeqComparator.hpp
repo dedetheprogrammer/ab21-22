@@ -49,7 +49,6 @@ private:
     std::vector<int> c;
     std::vector<std::vector<Operation>> t;
 
-
     void compare() {
         int c_prev, tmp, aux;
 
@@ -127,19 +126,19 @@ private:
                 if (n - a.begin) {
                     ch_str += a.to_string();
                     a = action(INS, c, n);
-                } else a.seq += Parse(a.end - a.begin, c);
+                } else a.seq += parse(a.end - a.begin, c);
             } else if (op == SUB) {
                 if (n - a.end != 1) {
                     ch_str += a.to_string();
                     a = action(SUB, c, n);
-                } else { a.end++; a.seq += Parse(a.end - a.begin, c); }
+                } else { a.end++; a.seq += parse(a.end - a.begin, c); }
             }
         } else {
             write(op, c, n);
         }
     }
 
-    std::string Parse(int i, char c) {
+    std::string parse(int i, char c) {
         if (c == '-') { pa_str += std::to_string(i) + ","; return "<DEL>"; }
         else if(c == '+') { pa_str += std::to_string(i) + ","; return "<ADD>"; }
         else if(c == '=') { pa_str += std::to_string(i) + ","; return "<SUB>"; }
