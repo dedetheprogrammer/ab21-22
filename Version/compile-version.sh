@@ -1,3 +1,4 @@
-g++ -std=c++11 main.cpp -o version
+#!/bin/bash
+g++ -std=c++11 main.cpp -o main
 echo "Initializing version storage. . ."
-./version init
+./main init
