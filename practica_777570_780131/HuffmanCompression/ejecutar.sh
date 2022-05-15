@@ -1,4 +1,5 @@
 #!/bin/bash
+# Author: Jorge Fenero Laborda (777570)
 echo "Compilando los archivos"
 g++ -std=c++11 main.cpp -o huf
 echo "Ya se han compilado los archivos"

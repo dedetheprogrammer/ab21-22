@@ -1,4 +1,5 @@
 #!/bin/bash
+# Author: Jorge Fenero Laborda (777570)
 echo "Inicializando compresion de Texto3.txt"
 ./huf -c Texto3.txt
 echo "creado fichero comprimido Texto3.huf"
