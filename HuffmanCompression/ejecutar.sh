@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "Compilando los archivos"
-g++ -std=c++11 HuffmanCompression.cpp -o huf
+g++ -std=c++11 main.cpp -o huf
 echo "Ya se han compilado los archivos"
 echo "Inicializando prueba 1 con fichero de texto Texto1.txt"
 ./prueba1.sh
