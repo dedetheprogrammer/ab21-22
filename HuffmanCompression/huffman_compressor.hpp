@@ -1,4 +1,5 @@
 /* ****************************************************************************
+ * File: Huffman compressor functions.
  * Author: Devid Dokash.
  * Date: 03/03/2022.
  * ****************************************************************************
@@ -46,21 +47,28 @@ bool verbose = false;
 
 class huffman_compressor {
 private:        
-    // -- Dependencias.
-    // --------------------------------------------------------------------
-    std::string arg;
-    std::string path_file;
-    std::string name;
-    std::string ext;
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- VARIABLES                                                         --
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    std::string arg;        // Given argument with which the compressor was called.
+    std::string path_file;  // File and absoluto path of the file with which the 
+                            // compressor was called.
+    std::string name;       // Basename.
+    std::string ext;        // Extension.
 
-    int rd_bytes; // Numero de bytes que seran leidos en el fichero.
-    std::vector<huffman_heap*> freqs; // Tabla de frecuencias (vector).
-    huffman_heap* root;
-    std::unordered_map<char, std::string> codes; // Tabla de codificacion (hashmap).
-    // --------------------------------------------------------------------
+    int rd_bytes;           // Readed bytes of the file. 
+    std::vector<huffman_heap*> freqs;   // Frequencies tables.
+    huffman_heap* root;                 // Hufffman heap root.
+    std::unordered_map<char, std::string> codes; // Codification table.
+
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- FUNCTIONS                                                         --
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     // -- Gets file size.
+    // @param file  Given file to get size.
+    // @return file size.
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     long get_file_size(std::string file) {
         struct stat stat_buf;
@@ -70,6 +78,8 @@ private:
 
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     // -- Checks if file exists.
+    // @param path_file     Given file to check.
+    // @return true if exists or is a regular file.
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     bool exists_file(std::string path_file) {
         struct stat tst;
@@ -80,7 +90,8 @@ private:
     }
 
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    // -- Expands path-file.
+    // -- Obtains the absolute path of the given file.
+    // @param rel_path  File with relative path.
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     void expand_path_file(std::string rel_path) {
         char full_path[1024];
@@ -93,7 +104,7 @@ private:
     }
 
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    // -- Parses file path.
+    // -- Obtains separately name and extension of the file.
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     void parse_path_file() {
         int fof = path_file.find_last_of("/\\");
@@ -107,7 +118,7 @@ private:
 
 public:
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    // -- Constructors.                                                     --
+    // -- CONSTRUCTORS                                                      --
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     huffman_compressor(std::string arg) : arg(arg) {
         if (!exists_file(arg)) throw file_not_found(arg);
@@ -117,15 +128,19 @@ public:
     }
 
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    // -- Inits huffman compressor.                                         --
+    // -- HUFFMAN COMPRESSOR FUNCTIONS                                      --
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Inits huffman compressor: calculates the frequences table, the
+    // huffman heap and the codification table.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     void init() {
         std::chrono::duration<double, std::milli> t_ex;
         auto checkpoint = std::chrono::high_resolution_clock::now();
-        // -- Tabla de frecuencias.
+        // -- Frequences table.
         // --------------------------------------------------------------------
-        frequences_table(); // Construccion de la tabla de las frecuencias de
-                            // los caracteres que aparecen en el fichero.
+        frequences_table(); // Frequences table construction.
         // --------------------------------------------------------------------
         if (verbose) {
             t_ex = std::chrono::high_resolution_clock::now() - checkpoint;
@@ -138,14 +153,12 @@ public:
         // --------------------------------------------------------------------
 
 
-        // -- Monticulo de frecuencias de Huffman.
+        // -- Frequences heap of Huffman.
         checkpoint = std::chrono::high_resolution_clock::now();
         // --------------------------------------------------------------------
-        full_huffman_heap();                        // Construccion del monticulo.
-        std::vector<huffman_heap*>().swap(freqs);    // Liberamos el espacio que se le
-                                                    // ha ido otorgando al vector a la 
-                                                    // hora de construir el monticulo 
-                                                    // ya que ahora esta vacio.
+        full_huffman_heap();                        // Heap construction.
+        std::vector<huffman_heap*>().swap(freqs);   // Freeing up space because 
+                                                    // the vector is now empty.
         // --------------------------------------------------------------------
         if (verbose) {
             t_ex = std::chrono::high_resolution_clock::now() - checkpoint;
@@ -158,11 +171,10 @@ public:
         }
         // --------------------------------------------------------------------
 
-        // -- Tabla de codificacion.
+        // -- Codification table
         checkpoint = std::chrono::high_resolution_clock::now();
         // --------------------------------------------------------------------
-        huffman_codes(root, "");    // Construccion de la tabla de codificacion 
-                                    // con el monticulo de Huffman.
+        huffman_codes(root, "");    // Codification table construction.
         // --------------------------------------------------------------------
         if (verbose) {
             t_ex = std::chrono::high_resolution_clock::now() - checkpoint;
@@ -175,9 +187,9 @@ public:
         // --------------------------------------------------------------------
     }
 
-    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    // -- Calculates the frequences tables from the given file.                 --
-    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Calculates the frequences tables from the given file.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     void frequences_table() {
         std::ifstream in(arg);
 
@@ -198,9 +210,9 @@ public:
         );
     }
 
-    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    // -- Calculates the Huffman heap through a frequences table.           --
-    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Calculates the Huffman heap through a frequences table.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     void full_huffman_heap() {
         huffman_heap *_1, *_2;
         if (freqs.size() <= 1) root = freqs.back();
@@ -215,9 +227,9 @@ public:
         } 
     }
 
-    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    // -- Calculates the code for each character through a huffman heap.    --
-    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Calculates the code for each character through a huffman heap.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     void huffman_codes(huffman_heap* heap, std::string code) {
         if (heap->getLeft_son() == nullptr && heap->getRight_son() == nullptr)
             codes.insert({heap->get_char(), code});
@@ -229,10 +241,10 @@ public:
         }
     }
 
-    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    // -- Compress the given file through the characters code. Stores the   --
-    // -- codes and the compression result itself in a file named <file>.huf -
-    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Compress the given file through the characters code. Stores the
+    // codes and the compression result itself in a file named <file>.huf
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     void compress(){
         if (!get_file_size(path_file)) throw empty_file(arg);
 
@@ -257,8 +269,8 @@ public:
         }
         out << "\n";
 
-        // Lee el fichero original caracter a caracter y escribe su codificacion 
-        // correspondiente en el nuevo fichero.
+        // Reads the original file character to character and writes its
+        // codification in the new file.
         char ch;
         std::string bitstring = "";
         std::ifstream in(arg);
@@ -274,9 +286,9 @@ public:
         out << (unsigned char) (b << (8-bitstring.length())).to_ulong();
     }
 
-    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    // -- Decompress the given file.                                        --
-    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Decompress the given file.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     void decompress() {
         if (ext.compare(".huf")) throw no_huffman_file(arg);
  
@@ -285,14 +297,14 @@ public:
         unsigned char ch;
         std::string bitstring = "";
 
-        // Obtener extension y tamaño original.
+        // Obtaining extension and original size.
         getline(in, bitstring);
         int fof = bitstring.find_last_of(" ");
         std::string ext = bitstring.substr(0, fof);
         if (ext[0] == '-') ext = "";
         int bytes_size = atoi(bitstring.substr(fof+1).c_str());
 
-        // Obtener tabla de codificacion.
+        // Obtaining codification table.
         getline(in, bitstring);
         std::unordered_map<std::string, char> codes;
         while(bitstring.length() != 0) {

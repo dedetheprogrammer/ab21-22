@@ -1,4 +1,5 @@
 /* ****************************************************************************
+ * File: Huffman Heap, custom heap AD-HOC solution for Huffman Compressor.
  * Author: Devid Dokash.
  * Date: 03/03/2022.
  * ****************************************************************************
@@ -13,11 +14,17 @@
 
 class huffman_heap {
 private:
-    huffman_heap* left_son;
-    huffman_heap* right_son;
-    char the_char;
-    int freq;
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- VARIABLES                                                         --
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    huffman_heap* left_son;     // Left son.
+    huffman_heap* right_son;    // Rigth son.
+    char the_char;              // Char of the current heap node.
+    int freq;                   // Its frequence or weight.
 public:
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- CONSTRUCTORS                                                      --
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     huffman_heap(): left_son(nullptr), right_son(nullptr), the_char('\0'), 
         freq(0) {}
 
@@ -32,16 +39,44 @@ public:
         if (right_son != nullptr) delete right_son;
     }
 
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- FUNCTIONS                                                         --
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Gets the current node left son.
+    // @return left son of the current node.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     huffman_heap* getLeft_son() const { return left_son; }
 
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Gets the current node right son.
+    // @return right son of the current node.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     huffman_heap* getRight_son() const { return right_son; }
 
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Gets the current node char.
+    // @return char of the current node.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     char get_char() const { return the_char; }
 
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Gets the current node frequence/weight.
+    // @return weight of the current node.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     int get_freq() const { return freq; }
 
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Increase the frequence by one.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     void inc_freq() { freq++; }
 
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Prints the heap from current node.
+    // @param level     Level of the current node.
+    // @param msg       Additional info for printing.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     void print_huffman_heap(int level, std::string msg){
         for (int i = 0; i < level; i++) std::cout << "--";
         std::cout << msg << " " << the_char << ":" << freq << std::endl;
@@ -53,6 +88,12 @@ public:
     }
 };
 
+// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+// -- Gets and remove the last element of a vector of huffman heap
+// nodes.
+// @param freqs     Vector of huffman heap.
+// @return the last element of the vector.
+// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 huffman_heap* pop_huffman_heap(std::vector<huffman_heap*> &freqs){
     huffman_heap *tmp = freqs.back();
     freqs.pop_back();

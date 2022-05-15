@@ -1,3 +1,9 @@
+/* ****************************************************************************
+ * File: Huffman compressor exceptions.
+ * Author: Devid Dokash.
+ * Date: 03/03/2022.
+ * ***************************************************************************/
+#pragma once
 #include <exception>
 #include <string>
 

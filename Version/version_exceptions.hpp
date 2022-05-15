@@ -1,3 +1,8 @@
+/* ****************************************************************************
+ * File: Control version storage exceptions.
+ * Author: Devid Dokash.
+ * Date: 15/05/2022.
+ * ***************************************************************************/
 #pragma once
 #include <exception>
 #include <string>

@@ -1,5 +1,5 @@
 /******************************************************************************
- * File: Version.hpp
+ * File: Control version storage implementation.
  * Description: implementation of a version manager storage.
  * Author: Devid Dokash
  * Version: v1.3
@@ -33,45 +33,61 @@
 #endif
 
 class version_storage {
-    const int MAX_LENGTH = 250;
-    const std::string PATH = ".data/";
-    const std::string REGISTER = PATH + ".register";
-    const std::string TMP = PATH + "tmp";
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- VARIABLES                                                         --
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    const int MAX_LENGTH = 250; // Line max length.
+    const std::string PATH = ".data/";  // Version folder.
+    const std::string REGISTER = PATH + ".register";    // Register path.
+    const std::string TMP = PATH + "tmp";   // Temporal file path.
 
-    std::string time;
-    std::string date;
+    std::string time;   // Time in which version has been called. 
+    std::string date;   // Date in which version has been called. 
 
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- File: saves every file registered.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     struct File {
-        std::string path_file = "";
-        std::string name = "";
-        std::string extension = "";
-        std::string path = "";
-        std::string version_id = "";
-        int register_pos = 0;
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        // -- VARIABLES                                                     --
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        std::string path_file = "";     // Absolute file and path.
+        std::string name = "";          // Basename.
+        std::string extension = "";     // Extension.
+        std::string path = "";          // Absolute path.
+        std::string version_id = "";    // Version id.
+        int register_pos = 0;           // Position in register.
 
-        bool exists = false;
-        bool followed = false;
-        bool updated = false;
+        bool followed = false;  // If true, file is in register.
+        bool updated = false;   // If true, file is updated.
 
-        std::string register_time = "";
-        std::string register_date = "";
-        int current_version = 0;
-        int last_version = 0;
-        std::string last_modified_time = "";
-        std::string last_modified_date = "";
+        std::string register_time = "";         // Register time.
+        std::string register_date = "";         // Register date.
+        int current_version = 0;                // Current version.
+        int last_version = 0;                   // Last version.
+        std::string last_modified_time = "";    // Last modify time.
+        std::string last_modified_date = "";    // Last modify date.
 
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        // -- Changes: saves the different versions of a file.
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         struct Changes {
-            std::string time;
-            std::string date;
-            std::string name;
-            std::string description;
+            // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            // -- VARIABLES                                                 --
+            // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            std::string time;           // Version time creation.
+            std::string date;           // Version date creation.
+            std::string name;           // Version name.
+            std::string description;    // Version description.
 
-            Changes(std::string time, std::string date, std::string name, std::string description) {
-                this->time = time;
-                this->date = date;
-                this->name = name;
-                this->description = description;
-            }
+
+            // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            // -- CONSTRUCTORS                                              --
+            // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            Changes(std::string time, std::string date, std::string name, 
+                std::string description) : time(time), date(date), name(name), 
+                description(description) 
+            {}
 
             Changes(std::vector<std::string> t) {
                 time = t[0];
@@ -80,12 +96,23 @@ class version_storage {
                 description = t[3];
             }
 
+            // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            // -- FUNCTIONS                                                 --
+            // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+            // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            // -- Prints version information.
+            // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
             void print() {
                 std::cout << "\t#[" << time << " " << date << "] " << name 
                     << ": " << (description.empty() ? "<empty>" : description) 
                     << std::endl; 
             }
 
+            // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            // -- Returns version information as string.
+            // @return string with version information.
+            // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
             std::string to_string() {
                 return "# " + time + "," + date + "," + name + "," + description;
             }
@@ -96,9 +123,10 @@ class version_storage {
         };
         std::vector<Changes> vers;
 
-        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-        // -- Constructors.
-        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        // -- CONSTRUCTORS                                                  --
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
         File() {}
 
         File(std::string path_file, int p, std::string time, std::string date) : path_file(path_file) {
@@ -125,7 +153,22 @@ class version_storage {
             get_version_id();  
         }
 
-        void update_file(std::string time, std::string date, std::string name, std::string comment) {
+
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        // -- FUNCTIONS                                                     --
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        // -- Updates the last modified info of the current file and adds a
+        // new version.
+        // @param time      Time to update to.
+        // @param date      Date to update to.
+        // @param name      Name of the new version.
+        // @param comment   Description of the new version.
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        void update_file(std::string time, std::string date, std::string name, 
+            std::string comment) 
+        {
             for (; last_version != current_version; last_version) vers.pop_back();
             if (name.empty()) name = "VERSION_" + std::to_string(current_version+1); 
             vers.push_back(Changes(time, date, name, comment));
@@ -135,21 +178,31 @@ class version_storage {
             last_version++;
         }
 
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        // -- Updates the last modified info of the current file.
+        // @param time      Time to update to.
+        // @param date      Date to update to.
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         void update_time(std::string time, std::string date) {
             last_modified_time = time;
             last_modified_date = date;
         }
 
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        // -- Deletes every file related to the current file.
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ 
         void erase() {
             remove((".data/" + version_id).c_str());
             for (; last_version > 1; last_version--) {
-                std::string file = ".data/" + version_id + "_" + padding(last_version, '0', 5) + "__";
+                std::string file = ".data/" + version_id + "_" + 
+                    padding(last_version, '0', 5) + "__";
                 remove(file.c_str());
             }
         }
 
         // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-        // -- Parses file path.
+        // -- Obtains separately the path, the name and the extension of
+        // the saved path_file.
         // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         void parse_path_file() {
             int fof = path_file.find_last_of("/\\");
@@ -172,6 +225,28 @@ class version_storage {
         }
 
         // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        // -- Returns the name of the current version changes file.
+        // @param mode     If false, returns the current version, if not, the 
+        //                 current version +1.
+        // @return current version changes file name.
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        std::string changes_file(bool mode = false) {
+            return ".data/" + version_id + "_" 
+                + padding((!mode ? current_version : current_version+1), '0', 5)
+                + "__";
+        }
+
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        // -- Checks that a version under given name is already registered to 
+        // the current file.
+        // @param name   Version to check.
+        // @return if found, iterator to the position of the found version.
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        std::vector<Changes>::iterator find_version(std::string name) {
+            return std::find(vers.begin(), vers.end(), name);
+        }
+
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         // -- To string.
         // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         std::string to_string() {
@@ -184,7 +259,7 @@ class version_storage {
         }
 
         // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-        // -- Prints file.
+        // -- Prints file information.
         // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         void print() {
             std::cout << "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+\n";
@@ -196,7 +271,6 @@ class version_storage {
             std::cout << "> Only ext:\t\t" << extension << "\n";
             std::cout << "> Version id:\t\t" << version_id << "\n";
             std::cout << "> Register pos:\t\t" << register_pos << "\n";
-            std::cout << "> Exists?\t\t" << (exists ? "YES" : "NO") << "\n";
             std::cout << "> Is added?\t\t" << (followed ? "YES" : "NO") << "\n";
             std::cout << "> Is updated?\t\t" << (updated ? "YES" : "NO") << "\n";
             std::cout << "> Register time:\t" << register_time << "\n";
@@ -210,7 +284,7 @@ class version_storage {
         }
 
         // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-        // -- Beautifies file.
+        // -- Prints file information in formatted way.
         // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         void beautify() {
             std::cout << std::setw(4) << register_pos   // #.
@@ -225,16 +299,6 @@ class version_storage {
                 << std::endl;
         }
 
-        std::string changes_file(bool mode = false) {
-            return ".data/" + version_id + "_" 
-                + padding((!mode ? current_version : current_version+1), '0', 5)
-                + "__";
-        }
-
-        std::vector<Changes>::iterator find_version(std::string name) {
-            return std::find(vers.begin(), vers.end(), name);
-        }
-
 
         bool operator==(const std::string& b) {
             return !path_file.compare(b);
@@ -244,22 +308,32 @@ class version_storage {
     std::vector<File> files;
 
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    // -- FILE SYSTEM                                                       --
+    // -- FILE SYSTEM FUNCTIONS                                             --
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     // -- Checks if file exists.
+    // @param path_file File with absolute path.
+    // @return true if exists, false if not.
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     bool exists_file(std::string path_file) {
         struct stat tst;
-        if (stat(path_file.c_str(), &tst) != 0 || !(tst.st_mode & S_IFREG)) return false;
-        else return true;
+        if (stat(path_file.c_str(), &tst) != 0 || !(tst.st_mode & S_IFREG)) 
+            return false;
+        else
+            return true;
     }
 
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    // -- Backups a file.
+    // -- Backups a file into another.
+    // @param src_f     Source file.
+    // @param dst_f     Destination file.
+    // @param append    If true, appends the source content.
+    // @param destroy   If true, destroys the source file.
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    void backup_file(std::string src_f, std::string dst_f, bool append = false, bool destroy = false) {
+    void backup_file(std::string src_f, std::string dst_f, bool append = false, 
+        bool destroy = false) 
+    {
         std::ifstream src;
         if (!append) src = std::ifstream(src_f, std::ios_base::app);
         else src = std::ifstream(src_f);
@@ -272,7 +346,9 @@ class version_storage {
     }
 
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    // -- Expands path-file.
+    // -- Expands a relative path-file.
+    // @param rel_path  File with relative path.
+    // @return file and absolute path.
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     std::string expand_path_file(std::string rel_path) {
         char full_path[1024];
@@ -284,13 +360,14 @@ class version_storage {
         return full_path;
     }
 
-
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     // -- REGISTER FUNCTIONS                                                --
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    // -- Parses the register file info for later manipulation.
+    // -- Parses register line fields.
+    // @param reg   Register line to parse.
+    // @return vector with register line fields.
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     std::vector<std::string> tokenize_register(std::string reg) {
         std::vector<std::string> t = tokenize(reg, "[,]", 0);
@@ -298,6 +375,11 @@ class version_storage {
         return t;
     }
 
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Parses register version line fields.
+    // @param reg   Register version line to parse.
+    // @return vector with register version line fields.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     std::vector<std::string> tokenize_version(std::string ver) {
         int fof;
         std::vector<std::string> t;
@@ -313,7 +395,8 @@ class version_storage {
     }
 
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    // -- Reads and saves register info.
+    // -- Reads the register. Each line stands for an added or a version 
+    // of it, that is saved in a vector.
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     void read_register() {
         std::string line = "";
@@ -328,7 +411,8 @@ class version_storage {
     }
 
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    // -- Rewrites register info.
+    // -- Rewrites the register. Reads the files vector and writes it 
+    // on the register file.
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     void rewrite_register() {
         std::ofstream out(REGISTER);
@@ -337,22 +421,39 @@ class version_storage {
     }
 
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    // -- Checks if file is followed.
+    // -- Checks if file is added in the register: checks if the files
+    // vector contains the file.
+    // @param arg   File to check.
+    // @return if found, iterator to the position of the found file.
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     std::vector<File>::iterator find_file(std::string arg) {
         return std::find(files.begin(), files.end(), arg);
     }
 
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Splits the timestamp to save the date and the time separately.
+    // @param ts    The timestamp to parse.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     void parse_version_timestamp(std::string ts) {
         int fof = ts.find_first_of(",");
         time = ts.substr(0,fof);
         date = ts.substr(fof+2);
     }
 
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Check that the given description is valid.
+    // @param desc      Given description for a version.
+    // @return true if description is less than 150 characters.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     bool valid_desc(std::string desc) {
         return (desc.length() < 150);
     }
 
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Check that the given name is valid.
+    // @param name      Given name for a version.
+    // @return true if name contains only alphanumeric and "_" chars.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     bool valid_name(std::string name) {
         if (name.empty()) return true;
         std::regex re("([A-Z]|[a-z]|_|[0-9])*");
@@ -360,8 +461,10 @@ class version_storage {
     }
 
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    // -- Restore the original sequence that was parsed to avoid token
-    // -- coincidence.
+    // -- Restores the original sequence that was parsed to avoid token
+    // coincidence.
+    // @param lwac  The line with applied changes.
+    // @return line with restored changes.
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     std::string unparse(std::string lwac) {
         lwac = std::regex_replace(lwac, std::regex("<ADD>"), "+");
@@ -370,6 +473,13 @@ class version_storage {
         return lwac;
     }
 
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Apply to the correspondent line the given changes.
+    // @param changes_str  Obtained changes.
+    // @param line      Current line pointed out in the file.
+    // @param sav       File from which to get the lines to change
+    // @param dst       File to save changes to.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     void a_link_to_the_past(std::string changes_str, int& line, std::ifstream& sav, std::ofstream& dst) {
 
         int target = stoi(substr(changes_str, " ").substr(3));
@@ -400,6 +510,9 @@ class version_storage {
     }
 
 public:
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- CONSTRUCTORS                                                      --
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     version_storage(int init = false) : n_files(0) {
         if (!init) {
             struct stat v;
@@ -410,8 +523,12 @@ public:
         }
     }
 
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- VERSION FUNCTIONS                                                 --
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    // -- Inits Version System: creates its folder.
+    // -- Inits Version System: creates it folder and it file.
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     void Init() {
         struct stat v;
@@ -427,6 +544,7 @@ public:
 
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     // -- Adds new file to the register.
+    // @param arg   Given parameter.
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     void Add(std::string arg) {
         try {
@@ -446,6 +564,9 @@ public:
         }
     }
 
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Deletes version directory from system.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     void Erase() {
         struct stat v;
         if (!stat(PATH.c_str(), &v) != 0 && !(v.st_mode & S_IFREG)) {
@@ -460,7 +581,9 @@ public:
     }
 
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    // -- Displays followed files or information about one an especific line.
+    // -- Displays added files or information about one especific 
+    // file.
+    // @param arg   File to display.
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     void Log(std::string arg) {
         try {
@@ -491,7 +614,8 @@ public:
 
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     // -- Removes the given file of being followed: remove its entry in the 
-    // -- register and every file related (changes and sav).
+    // -- register and every file related (changes and saved).
+    // @param arg       File to remove.
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     void Remove(std::string arg) {
         try {
@@ -510,7 +634,9 @@ public:
     }
 
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    // -- Restores given file's given version.
+    // -- Restores file's given version.
+    // @param arg   File to restore.
+    // @param version   Version to restore.
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     void Restore(std::string arg, int version) {
         try {
@@ -566,6 +692,7 @@ public:
 
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     // -- Displays the saved content of the given file if followed.
+    // @param arg   File to display its content.
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     void See(std::string arg) {
         try {
@@ -584,8 +711,11 @@ public:
     }
 
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    // -- Updates given file and saves its current changes respect to the saved 
-    // -- one.
+    // -- Updates given file and saves its current changes respect to 
+    // the saved one.
+    // @param arg   File to update.
+    // @param name  Version name.
+    // @param description Version description.
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     void Update(std::string arg, std::string name, std::string description) {
         try {

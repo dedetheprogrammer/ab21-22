@@ -1,3 +1,8 @@
+/* ****************************************************************************
+ * File: Several functions with general purposes.
+ * Author: Devid Dokash.
+ * Date: 15/05/2022.
+ * ***************************************************************************/
 #pragma once
 #include <algorithm>
 #include <fstream>
@@ -8,6 +13,7 @@
 
 // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 // -- Generates a timestamp based on the current machine local time.
+// @return string with the timestamp.
 // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 std::string timestamp() {
     time_t t; std::time(&t);
@@ -18,10 +24,11 @@ std::string timestamp() {
 
 // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 // -- Tokenizes a string with regex and the given pattern.
-//  s: string to tokenize.
-//  pattern: pattern to apply.
-//  extrict: removes duplicated and white-space entries.
-//  keep: keeps the delimiter of the pattern.
+// @param s        String to tokenize.
+// @param pattern  Pattern to apply.
+// @param extrict  If, true, removes duplicated and white-space entries.
+// @param keep     If true, keeps the delimiter of the pattern.
+// @return vector with the tokens.
 // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 std::vector<std::string> tokenize(std::string s, const std::string pattern, bool extrict, bool keep = false) {
     std::regex re(pattern);
@@ -44,6 +51,10 @@ std::vector<std::string> tokenize(std::string s, const std::string pattern, bool
 
 // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 // -- Padds the string for n to the left with given char.
+// @param i     Int to padd in. 
+// @param c     Char with which to do the padding.
+// @param n     Length of padding.
+// @return string with the left padding.
 // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 std::string padding(int i, char c, int n) {
     std::string s = std::to_string(i);
@@ -52,7 +63,10 @@ std::string padding(int i, char c, int n) {
 
 // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 // -- Obtains substring from first ocurrence of pattern and modifies
-// -- original string.
+// original string.
+// @param s     String to obain the ocurrence and modify.
+// @param pattern   Pattern to search with.
+// @return if found, return a string with the token matched the pattern.
 // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 std::string substr(std::string& s, std::string pattern) {
     int fof = s.find_first_of(pattern);

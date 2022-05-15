@@ -1,9 +1,7 @@
 /* ****************************************************************************
+ * File: Sequence comparator implementation by dynamic programming.
  * Author: Devid Dokash.
- * Date: 03/03/2022.
- * ****************************************************************************
- * Overloading operators << and >>:
-    https://www.tutorialspoint.com/cplusplus/input_output_operators_overloading.htm
+ * Date: 15/05/2022.
  * ***************************************************************************/
 #pragma once
 #include <iostream>
