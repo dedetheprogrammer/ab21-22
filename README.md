@@ -2,11 +2,11 @@
 ## Practicas
 - [Practica 1](https://github.com/ddevigner/ab21-22/tree/main/HuffmanCompression): compresor mediante el algoritmo de Huffman.
     - Ficheros:
-        - [HuffmanCompression.cpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/HuffmanCompression.cpp)
-        - [HuffmanHeap.h](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/HuffmanHeap.h)
+        - [huffman_compressor.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_compressor.hpp): containts the implementation of the different functions that implement the Huffman Algorithm (as calculate the frequences table, the Huffman heap, etc) and the features offered by the compressor (compress, decompress).
+        - [huffman_heap.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_heap.hpp): implements the custom heap on purpose of apply the Huffman Algorithm.
+
         - main.cpp: programa del compresor.
-        - huffman_compressor.hpp: contiene las funciones de calculo de tabla de frecuencias, monticulo, tabla de codificacion, compresion y decompresion.
-        - huffman_heap.hpp: estructura propia para el monticulo de Huffman.
+        - : estructura propia para el monticulo de Huffman.
         - huffman_exceptions.hpp: excepciones que cubren situaciones que el usuario no deberia reproducir.
         - ejecutar.sh: script de compilacion y pruebas.
         - prueba[1-3].sh: scripts de pruebas individuales.
