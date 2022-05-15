@@ -453,7 +453,7 @@ public:
             #ifdef WIN32
                 _rmdir(PATH.c_str());
             #else
-                rmdir(PATH.c_str(), mode_t(0755));
+                rmdir(PATH.c_str());
             #endif
         }
     }
