@@ -1,17 +1,16 @@
 # ALGORITMIA BASICA 2021-22
 ## Practicas
 - [Practica 1](https://github.com/ddevigner/ab21-22/tree/main/HuffmanCompression): compresor mediante el algoritmo de Huffman.
-El primer programa es un compresor de archivos basado en el algoritmo de Huffman.
 
-Para la tabla de frecuencias se leerá el fichero pasado por parametro caracter 
-a caracter, cada caracter nuevo se guardará en un nuevo nodo de monticulo de 
-Huffman, de esta manera el programa ahorrará cierta computacion, cada aparicion 
-de un caracter aumentará en uno su frecuencia y ademas, se guardará el numero de 
-bytes reales leidos. En un punto posterior se explicará de manera mas detallada
-las decisiones de los bytes leidos y los nodos de Huffman. La tabla de 
-frecuencias se guarda en un vector ordenado por frecuencias, se probaron otras 
-decisiones como una tabla hash o un diccionario, pero el ordenado del vector
-era mucho mas flexible y aceptaba estructuras propias con funciones lambda.
+    Para la tabla de frecuencias se leerá el fichero pasado por parametro caracter 
+    a caracter, cada caracter nuevo se guardará en un nuevo nodo de monticulo de 
+    Huffman, de esta manera el programa ahorrará cierta computacion, cada aparicion 
+    de un caracter aumentará en uno su frecuencia y ademas, se guardará el numero de 
+    bytes reales leidos. En un punto posterior se explicará de manera mas detallada
+    las decisiones de los bytes leidos y los nodos de Huffman. La tabla de 
+    frecuencias se guarda en un vector ordenado por frecuencias, se probaron otras 
+    decisiones como una tabla hash o un diccionario, pero el ordenado del vector
+    era mucho mas flexible y aceptaba estructuras propias con funciones lambda.
 
 Se desarrolla una nueva estructura de solucion ad-hoc basada en este problema:
 un nodo de monticulo de Huffman (huffman_heap), decidido así debido a la 
