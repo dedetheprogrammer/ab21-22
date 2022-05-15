@@ -1,4 +1,4 @@
 #!/bin/bash
-echo "Has hecho cambios en el fichero y se van a actualizar para crear una nueva version"
-./version update Texto1.txt
+echo "Has hecho cambios en el fichero $1 y se van a actualizar para crear una nueva version"
+./version update $1
 echo "Se han actualizado los cambios y se ha creado una nueva version"
