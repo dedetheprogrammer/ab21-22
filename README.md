@@ -20,10 +20,6 @@
     - [huffman_heap.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_heap.hpp): custom heap for huffman algorithm.
     - [huffman_exceptions.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_exceptions.hpp): exceptions for situations when the user is doing something that he shouldn't...
 
-- Restrictions:
-    - A la hora de descomprimir, debe ser el fichero .huf, si no, no funcionará.
-
-
 ## [Practica 2](https://github.com/ddevigner/ab21-22/tree/main/VersionStorage). Almacen y gestor de versiones
 - Archivos:
     - [main.cpp](https://github.com/ddevigner/ab21-22/blob/main/Version/main.cpp): main program.
