@@ -9,7 +9,7 @@ using namespace std;
 void Help() {
     std::cout << "Usage: version [options]\n"
         << "Options:\n" << std::left
-        << std::setw(20) << "  follow <file>" << "Follows given file.\n"
+        << std::setw(20) << "  add <file>" << "Follows given file.\n"
         << std::setw(20) << "  help" << "Help usage. What then?\n"
         << std::setw(20) << "  log" << "Displays every followed file.\n"
         << std::setw(20) << "  remove <file>" << "Remove given file.\n"
@@ -21,8 +21,8 @@ void Help() {
 }
 
 void option_follow(version_storage& vs, int argc, char* argv[]) {
-    if (argc-1 != 2) throw bad_arguments_number("follow");
-    vs.Follow(argv[2]);
+    if (argc-1 != 2) throw bad_arguments_number("add");
+    vs.Add(argv[2]);
 }
 
 void option_log(version_storage& vs, int argc, char* argv[]) {
@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
         if (!(argc-1)) Help();
         else {
             if (!strcmp(argv[1], "help")) Help();
-            else if (!strcmp(argv[1], "follow")) option_follow(vs, argc, argv);
+            else if (!strcmp(argv[1], "add")) option_follow(vs, argc, argv);
             else if (!strcmp(argv[1], "init")) vs.Init();
             else if (!strcmp(argv[1], "log")) option_log(vs, argc, argv);
             else if (!strcmp(argv[1], "remove")) option_remove(vs, argc, argv);

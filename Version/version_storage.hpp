@@ -21,7 +21,7 @@
 #include <time.h>
 
 #include "sequence_comparator.hpp"
-#include "VersionExceptions.hpp"
+#include "version_exceptions.hpp"
 #include "utils.hpp"
 
 #ifdef WIN32
@@ -188,7 +188,7 @@ class version_storage {
             std::cout << "> Version id:\t\t" << version_id << "\n";
             std::cout << "> Register pos:\t\t" << register_pos << "\n";
             std::cout << "> Exists?\t\t" << (exists ? "YES" : "NO") << "\n";
-            std::cout << "> Is followed?\t\t" << (followed ? "YES" : "NO") << "\n";
+            std::cout << "> Is added?\t\t" << (followed ? "YES" : "NO") << "\n";
             std::cout << "> Is updated?\t\t" << (updated ? "YES" : "NO") << "\n";
             std::cout << "> Register time:\t" << register_time << "\n";
             std::cout << "> Register date:\t" << register_date << "\n";
@@ -211,7 +211,7 @@ class version_storage {
                 << std::setw(8)  << current_version     // Current version.
                 << std::setw(8)  << last_version        // Last version.
                 << path_file << "\n"                    // Path.
-                << "  Follow: " << register_time + " " + register_date + "\n"
+                << "  Added:  " << register_time + " " + register_date + "\n"
                 << "  Modify: " << last_modified_time + " " + last_modified_date
                 << std::endl;
         }
@@ -349,45 +349,19 @@ class version_storage {
         return std::regex_match(name, re);
     }
 
-    std::string unparse(std::vector<std::string> mods, std::string seq) {
-        if (mods.size()) {
-            int fof;
-            std::string del = "<DEL>", add = "<ADD>", sub = "<SUB>";
-            for (int i = 0; stoi(mods[i]) < seq.length(); i++) {
-                fof = seq.find(del);
-                if (fof != std::string::npos) {
-                    mods.erase(mods.begin() + i);
-                    seq.replace(fof, del.length(), "-");
-                } else {
-                    fof = seq.find(add);
-                    if (fof != std::string::npos) {
-                        mods.erase(mods.begin() + i);
-                        seq.replace(fof, add.length(), "-");
-                    } else {
-                        fof = seq.find(sub);
-                        if (fof != std::string::npos) {
-                            mods.erase(mods.begin() + i);
-                            seq.replace(fof, sub.length(), "-");
-                        }
-                    }
-                }
-            }
-        }
-        return seq;
-    }
-
-    std::string pre_analysis(std::string a, std::string b) {
-        if (!a.compare(b)) return "=";
-        else if (!a.empty() && b.empty()) return "-1:" + std::to_string(a.length());
-        else if (!b.empty() && a.empty()) return "+1:" + b;
-        return "!";
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // -- Restore the original sequence that was parsed to avoid token
+    // -- coincidence.
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    std::string unparse(std::string lwac) {
+        lwac = std::regex_replace(lwac, std::regex("<ADD>"), "+");
+        lwac = std::regex_replace(lwac, std::regex("<DEL>"), "-");
+        lwac = std::regex_replace(lwac, std::regex("<SUB>"), "=");
+        return lwac;
     }
 
     void a_link_to_the_past(std::string changes_str, int& line, std::ifstream& sav, std::ofstream& dst) {
         int target = stoi(substr(changes_str, " ").substr(3));
-        std::string mods_str = substr(changes_str, " ");
-        std::vector<std::string> mods;
-        if (mods_str[0] != '!') mods = tokenize(mods_str, ",", 1);
 
         std::string lwac; // Line with applied changes.
         std::vector<std::string> changes = tokenize(changes_str, "(\\+|\\-|\\=)", 0, 1);
@@ -407,12 +381,11 @@ class version_storage {
   
             if ((*(c + 1))[0] == '-') lwac.erase(fst, stoi(seq) - fst);
             else {
-                seq = unparse(mods, seq);
                 if ((*(c + 1))[0] == '+') lwac.insert(fst, seq);
                 else if ((*(c + 1))[0] == '=') lwac.replace(fst, seq.length(), seq);
             }
         }
-        dst << lwac << "\n";
+        dst << unparse(lwac) << "\n";
         line++;
     }
 
@@ -440,7 +413,7 @@ public:
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     // -- Adds new file to the register.
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    void Follow(std::string arg) {
+    void Add(std::string arg) {
         try {
             if (!exists_file(arg)) throw file_not_found(arg);
             if (find_file(expand_path_file(arg)) != files.end()) 
@@ -595,26 +568,25 @@ public:
             bool first_change = true, has_changes = false;
             std::string changes_file = PATH + f->version_id + "_" 
                 + padding(f->current_version+1, '0', 5) + "__", aux;
-            std::string otou, utoo, parsing;
 
             // -- Saved file --------------------------------------------------
             int n_a;
-            std::string a;
+            std::string a, otou;
             std::ifstream A(PATH + f->version_id);
 
             // -- Updated file ------------------------------------------------
             int n_b;
-            std::string b;
+            std::string b, utoo;
             std::ifstream B(arg);
 
             std::ofstream out(changes_file, std::ios_base::app);
             for (int l = 1; !A.eof() || !B.eof(); l++) {
-                a = b = otou = utoo = parsing = "";
-                
+                a = otou = "";
                 getline(A, a); 
                 a = std::regex_replace(a, std::regex("\\r"), "");
                 n_a = (!a.empty() ? std::ceil(double(a.length())/double(MAX_LENGTH)) : 1);
 
+                b = utoo = "";
                 getline(B, b);
                 b = std::regex_replace(b, std::regex("\\r"), "");
                 n_b = (!b.empty() ? std::ceil(double(b.length())/double(MAX_LENGTH)) : 1);
@@ -622,35 +594,25 @@ public:
                 for (int i = 1; i <= std::max(n_a, n_b); i++) {
                     std::string a_a = (i <= n_a ? a.substr((i-1)*MAX_LENGTH, i*MAX_LENGTH) : "");
                     std::string b_b = (i <= n_b ? b.substr((i-1)*MAX_LENGTH, i*MAX_LENGTH) : "");
-                    aux = pre_analysis(a_a, b_b);
-                    if (aux[0] != '=') {
-                        has_changes = true;
-                        if (aux[0] != '!') {
-                            otou += aux;
-                            utoo += pre_analysis(b_b, a_a);
-                        } else {
-                            sequence_comparator AB(a_a, b_b, true);
-                            otou += AB.to_string(aux);
-                            if (!aux.empty()) parsing += "," + aux;
 
-                            sequence_comparator BA(b_b, a_a, true);
-                            utoo += BA.to_string(aux);
-                            if (!aux.empty()) parsing += "," + aux;
-                        }
-                    }
+                    sequence_comparator AB(a_a, b_b, (i-1)*MAX_LENGTH, true);
+                    otou += AB.to_string();
+
+                    sequence_comparator BA(b_b, a_a, (i-1)*MAX_LENGTH, true);
+                    utoo += BA.to_string();
                 }
                 if (!otou.empty()) {
                     if (!first_change) out << "\n";
                     else first_change = false;
-                    out << ">>@" << l << " " << (!parsing.empty() ? parsing : "!") << " " << otou << "\n";
+                    out << ">>@" << l << " " << otou << "\n";
                 }
-                if (!utoo.empty()) out << "<<@" << l << " " << (!parsing.empty() ? parsing : "!") << " " << utoo;
+                if (!utoo.empty()) out << "<<@" << l << " " << utoo;
             }
             A.close();
             B.close();
             out.close();
 
-            if (has_changes) {
+            if (!first_change) {
                 f->update_file(time, date, name, description);
                 backup_file(arg, PATH + f->version_id);
                 rewrite_register();
