@@ -68,7 +68,7 @@ registro y de ultima modificacion, la version actual y la ultima version guardad
 si esta actualizado y el nombre y path absoluto del fichero:
 
 > REGISTER_DATE, REGISTER_TIME, UPDATED, CURRENT_VERSION, LAST_VERSION, MODIFY_TIME, MODIFY_DATE, FILE
-> # VERSION_TIME, VERSION_DATE, VERSION_NAME, VERSION_DESCRIPTION.
+> \# VERSION_TIME, VERSION_DATE, VERSION_NAME, VERSION_DESCRIPTION.
 > [...]
 
 Es importante tener el nombre y path absoluto del fichero, ya que es la unica 
