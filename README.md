@@ -1,13 +1,12 @@
 # ALGORITMIA BASICA 2021-22
 ## Practicas
-- [Practica 1](https://github.com/ddevigner/ab21-22/tree/main/HuffmanCompression): compresor mediante el algoritmo de Huffman.
+### [Practica 1](https://github.com/ddevigner/ab21-22/tree/main/HuffmanCompression)
+Compresor de archivos mediante el algoritmo de Huffman.
     - Ficheros:
+        - [main.cpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/main.cpp): contains the main programm, its features.
         - [huffman_compressor.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_compressor.hpp): containts the implementation of the different functions that implement the Huffman Algorithm (as calculate the frequences table, the Huffman heap, etc) and the features offered by the compressor (compress, decompress).
-        - [huffman_heap.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_heap.hpp): implements the custom heap on purpose of apply the Huffman Algorithm.
-
-        - main.cpp: programa del compresor.
-        - : estructura propia para el monticulo de Huffman.
-        - huffman_exceptions.hpp: excepciones que cubren situaciones que el usuario no deberia reproducir.
+        - [huffman_heap.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_heap.hpp): implements a custom heap for the purpose of applying the Huffman Algorithm.
+        - [huffman_exceptions.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_exceptions.hpp): exceptions for situations where the user is doing something that he shouldn't...
         - ejecutar.sh: script de compilacion y pruebas.
         - prueba[1-3].sh: scripts de pruebas individuales.
         - Texto[1-3].txt: ficheros de prueba.
