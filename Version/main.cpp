@@ -2,7 +2,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include "Version.hpp"
+#include "version_storage.hpp"
 
 using namespace std;
 
@@ -20,34 +20,34 @@ void Help() {
         << "Updates a file, can give a name and a description.\n";
 }
 
-void option_follow(VersionStorage& vs, int argc, char* argv[]) {
+void option_follow(version_storage& vs, int argc, char* argv[]) {
     if (argc-1 != 2) throw bad_arguments_number("follow");
     vs.Follow(argv[2]);
 }
 
-void option_log(VersionStorage& vs, int argc, char* argv[]) {
+void option_log(version_storage& vs, int argc, char* argv[]) {
     if (argc-1 != 1 && argc-1 != 2) throw bad_arguments_number("log");
     if (argc-1 == 1) vs.Log("");
     else vs.Log(argv[2]);
 }
 
-void option_remove(VersionStorage& vs, int argc, char* argv[]) {
+void option_remove(version_storage& vs, int argc, char* argv[]) {
     if (argc-1 != 2) throw bad_arguments_number("remove");
     vs.Remove(argv[2]);
 }
 
-void option_restore(VersionStorage& vs, int argc, char* argv[]) {
+void option_restore(version_storage& vs, int argc, char* argv[]) {
     if (argc-1 != 4) throw bad_arguments_number("restore");
     if (!strcmp(argv[3],"--version")) vs.Restore(argv[2], std::stoi(argv[4]));
     // else throw bad_option_usage();
 }
 
-void option_see(VersionStorage& vs, int argc, char* argv[]) {
+void option_see(version_storage& vs, int argc, char* argv[]) {
     if (argc-1 != 2) throw bad_arguments_number("see");
     vs.See(argv[2]);
 }
 
-void option_update(VersionStorage& vs, int argc, char* argv[]) {
+void option_update(version_storage& vs, int argc, char* argv[]) {
     if (argc-1 == 2) vs.Update(argv[2], "","");
     else if (argc-1 == 4) {
         if (!strcmp(argv[3], "--name")) vs.Update(argv[2], argv[4],"");
@@ -60,7 +60,7 @@ void option_update(VersionStorage& vs, int argc, char* argv[]) {
 }
 
 int main(int argc, char* argv[]) {
-    VersionStorage vs;
+    version_storage vs;
     try {
         if (!(argc-1)) Help();
         else {
