@@ -2,91 +2,68 @@
 ## [Practica 1: Compresor de archivos mediante el algoritmo de Huffman](https://github.com/ddevigner/ab21-22/tree/main/HuffmanCompression)
 - Ficheros:
     - [main.cpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/main.cpp): contains the main programm, its features.
-    - [huffman_compressor.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_compressor.hpp): containts the implementation of the different functions that implement the Huffman Algorithm (as calculate the frequences table, the Huffman heap, etc) and the features offered by the compressor (compress, decompress).
+    - [huffman_compressor.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_compressor.hpp): contains the implementation of the different functions that implement the Huffman Algorithm (as calculate the frequences table, the Huffman heap, etc) and the features offered by the compressor (compress, decompress).
     - [huffman_heap.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_heap.hpp): implements a custom heap for the purpose of applying the Huffman Algorithm.
     - [huffman_exceptions.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_exceptions.hpp): exceptions for situations where the user is doing something that he shouldn't...
-    - ejecutar.sh: script de compilacion y pruebas.
-    - prueba[1-3].sh: scripts de pruebas individuales.
-    - Texto[1-3].txt: ficheros de prueba.
 
-    - Compilacion:
-        ```bash
-            g++ -std=c++11 main.cpp -o huf
-        ```
-    - Uso:
-        - Compresion:
-        ```bash
-            ./huffman -c <file>
-        ```
-        - Decompresion:
-        ```bash
-            ./huffman -d <file>.huf
-        ```
-    - Utilizacion:
-    huf [opciones]
+- Compilacion:
+    ```bash
+        g++ -std=c++11 main.cpp -o huf
+    ```
+
+- Utilizacion:
+    ```bash
+    ./huf [opciones]
     Opciones: 
         -c <file>       Comprime el archivo dado.
         -d <file>.huf   Descomprime el archivo huffman. 
         help            Muestra ayuda.
+    ```
 
 - Restricciones:
     - Solo funciona con ficheros.
     - A la hora de descomprimir, debe ser el fichero .huf, si no, no funcionará.
 
+
 ## [Practica 2: Almacen y gestor de versiones](https://github.com/ddevigner/ab21-22/tree/main/VersionStorage)
-
-
 - Archivos:
-    - [main.cpp](https://github.com/ddevigner/ab21-22/blob/main/Version/main.cpp)
-    - [Version.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/Version.hpp)
-    - [VersionExceptions.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/VersionExceptions.hpp)
-    - [SeqComparator.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/SeqComparator.hpp)
+    - [main.cpp](https://github.com/ddevigner/ab21-22/blob/main/Version/main.cpp): contains the main program, its features.
+    - [version_storage.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/version_storage.hpp): contains the implementation of the different functions that implement the different features offered by the version control storage.
+    - [version_exceptions.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/version_exceptions.hpp): exceptions for situations where the user is doing something that he shouldn't...
+    - [sequence_comparator.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/sequence_comparator.hpp): implements the sequence comparation algorithm.
+    - [utils.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/utils.hpp): general purpose functions.
+
 - Compilacion:
     ```bash
         g++ -std=c++11 main.cpp -o version
     ```
-- Uso:
-    - Seguir un nuevo fichero: 
-    ```bash
-        ./version follow <file>
-    ```
+
 - Utilizacion
-version [opciones]
-Opciones:
-    add <file>      Añade el fichero al registro.
-    erase           Elimina la carpeta de version.
-    help            Muestra ayuda.
-    init            Inicializa version y crea la carpeta de registro.
-    log [<file>]    Muestra los ficheros registrados o informacion sobre un 
-                        fichero en especifico.
-    remove <file>   Quita el fichero del registro.
-    restore <file> --version <n>
-                    Restaura la version n del fichero, sea posterior o 
-                    anterior.
-    see <file>      Muestra el contenido del fichero que tiene guardado version.
-    update <file>   Actualiza el contenido del fichero. Si la version actual
-                    es inferior a la ultima, se perderan todas las versiones
-                    posteriores a la actual.
+    ```bash
+    version [opciones]
+    Opciones:
+        add <file>      Añade el fichero al registro.
+        erase           Elimina la carpeta de version.
+        help            Muestra ayuda.
+        init            Inicializa version y crea la carpeta de registro.
+        log [<file>]    Muestra los ficheros registrados o informacion sobre un 
+                            fichero en especifico.
+        remove <file>   Quita el fichero del registro.
+        restore <file> --version <n>
+                        Restaura la version n del fichero, sea posterior o 
+                        anterior.
+        see <file>      Muestra el contenido del fichero que tiene guardado version.
+        update <file>   Actualiza el contenido del fichero. Si la version actual
+                        es inferior a la ultima, se perderan todas las versiones
+                        posteriores a la actual.
+    ```
 
 - Restricciones:
     - INICIALIZAR VERSION, SI NO NO FUNCIONA: ./version init
-    - El comportamiento del programa con ficheros de texto con carácteres no 
-    ASCII (acentos, letras de diferentes alfabetos, etc) es impredecible.
-    - El comportamiento con lineas mayores a 250 caracteres es un poco impredecible, 
-    no ha podido ser testeado del todo.
+    - El comportamiento del programa con ficheros de texto con carácteres no ASCII (acentos, letras de diferentes alfabetos, etc) es impredecible.
+    - El comportamiento con lineas mayores a 250 caracteres es un poco impredecible, no ha podido ser testeado del todo.
     - Usar los comandos como se disponen.
 
-- Ficheros:
-    - main.cpp: programa del control de versiones.
-    - sequence_comparator.hpp: contiene las funciones de comparacion de secuencias.
-    - version_storage.hpp: contiene las funciones del programa.
-    - version_exceptions.hpp: excepciones que cubren situaciones donde el usuario
-    hace lo que no deberia hacer...
-    - utils.hpp: contiene funciones de proposito general que no pertenecian a ningun otro
-    fichero.
-    - ejecutar.sh: script de compilacion y pruebas.
-    - restore.sh, udpate.sh: scripts de pruebas individuales.
-    - Texto[1-2].txt: ficheros de prueba.
 
 <!--Para la tabla de frecuencias se leerá el fichero pasado por parametro caracter a caracter, cada caracter nuevo se guardará en un nuevo nodo de monticulo de Huffman, de esta manera el programa ahorrará cierta computacion, cada aparicion de un caracter aumentará en uno su frecuencia y ademas, se guardará el numero de bytes reales leidos. En un punto posterior se explicará de manera mas detallada
 las decisiones de los bytes leidos y los nodos de Huffman. La tabla de frecuencias se guarda en un vector ordenado por frecuencias, se probaron otras decisiones como una tabla hash o un diccionario, pero el ordenado del vector era mucho mas flexible y aceptaba estructuras propias con funciones lambda.
