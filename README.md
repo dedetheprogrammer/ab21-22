@@ -1,5 +1,5 @@
 # ALGORITMIA BASICA 2021-22
-## [Practica 1: Compresor de archivos mediante el algoritmo de Huffman](https://github.com/ddevigner/ab21-22/tree/main/HuffmanCompression)
+## [Practica 1](https://github.com/ddevigner/ab21-22/tree/main/HuffmanCompression): Compresor de archivos mediante el algoritmo de Huffman
 - Ficheros:
     - [main.cpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/main.cpp): contains the main programm, its features.
     - [huffman_compressor.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_compressor.hpp): contains the implementation of the different functions that implement the Huffman Algorithm (as calculate the frequences table, the Huffman heap, etc) and the features offered by the compressor (compress, decompress).
@@ -25,7 +25,7 @@
     - A la hora de descomprimir, debe ser el fichero .huf, si no, no funcionará.
 
 
-## [Practica 2: Almacen y gestor de versiones](https://github.com/ddevigner/ab21-22/tree/main/VersionStorage)
+## [Practica 2](https://github.com/ddevigner/ab21-22/tree/main/VersionStorage): Almacen y gestor de versiones
 - Archivos:
     - [main.cpp](https://github.com/ddevigner/ab21-22/blob/main/Version/main.cpp): contains the main program, its features.
     - [version_storage.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/version_storage.hpp): contains the implementation of the different functions that implement the different features offered by the version control storage.
