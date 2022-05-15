@@ -1,27 +1,26 @@
 # ALGORITMIA BASICA 2021-22
-## [Practica 1](https://github.com/ddevigner/ab21-22/tree/main/HuffmanCompression). Compresor de archivos mediante el algoritmo de Huffman
-- Ficheros:
-    - [main.cpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/main.cpp): main programm.
+## [Practice 1](https://github.com/ddevigner/ab21-22/tree/main/HuffmanCompression). File compressor based on Huffman algorithm.
+- Compilation:
+    ```bash
+        g++ -std=c++11 main.cpp -o huf
+    ```
+    
+- Use:
+    ```bash
+    ./huf [opciones]
+    Opciones: 
+        -c <file>       Compress the given file.
+        -d <file>.huf   Decompress the huffman file. Only works with <file>.huf files.
+        help            Shows help.
+    ```
+
+- Files:
+    - [main.cpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/main.cpp): main program.
     - [huffman_compressor.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_compressor.hpp): huffman compressor and huffman algorithm functions implementation.
     - [huffman_heap.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_heap.hpp): custom heap for huffman algorithm.
     - [huffman_exceptions.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_exceptions.hpp): exceptions for situations when the user is doing something that he shouldn't...
 
-- Compilacion:
-    ```bash
-        g++ -std=c++11 main.cpp -o huf
-    ```
-
-- Utilizacion:
-    ```bash
-    ./huf [opciones]
-    Opciones: 
-        -c <file>       Comprime el archivo dado.
-        -d <file>.huf   Descomprime el archivo huffman. 
-        help            Muestra ayuda.
-    ```
-
-- Restricciones:
-    - Solo funciona con ficheros.
+- Restrictions:
     - A la hora de descomprimir, debe ser el fichero .huf, si no, no funcionará.
 
 
