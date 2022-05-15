@@ -170,14 +170,14 @@ public:
         std::cout << "\n";
     }
 
-    std::string to_string() {
+    std::string to_string(std::string& parsing) {
         mode = true;
         pa_str = "";
         compare();
         resolve(A.length(), B.length());
+
+        parsing = pa_str;
         ch_str += (!a.wiped ? a.to_string() : "");
-        if (ch_str.empty()) return "";
-        if (pa_str.empty()) return "! " + ch_str;
-        else return pa_str.substr(0, pa_str.length()-1) + " " + ch_str;
+        return ch_str;
     }
 };

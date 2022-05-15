@@ -9,6 +9,7 @@
  *****************************************************************************/
 #pragma once
 #include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -31,6 +32,7 @@
 #endif
 
 class version_storage {
+    const int MAX_LENGTH = 250;
     const std::string PATH = ".data/";
     const std::string REGISTER = PATH + ".register";
     const std::string TMP = PATH + "tmp";
@@ -590,41 +592,59 @@ public:
             if (f->find_version(name) != f->vers.end()) throw already_named_version(arg, name);
             if (!valid_desc(description)) throw too_long_description();
 
-            bool has_changes = false;
+            bool first_change = true, has_changes = false;
             std::string changes_file = PATH + f->version_id + "_" 
-                + padding(f->current_version+1, '0', 5) + "__", aux; 
+                + padding(f->current_version+1, '0', 5) + "__", aux;
+            std::string otou, utoo, parsing;
 
             // -- Saved file --------------------------------------------------
+            int n_a;
             std::string a;
             std::ifstream A(PATH + f->version_id);
 
             // -- Updated file ------------------------------------------------
+            int n_b;
             std::string b;
             std::ifstream B(arg);
 
             std::ofstream out(changes_file, std::ios_base::app);
             for (int l = 1; !A.eof() || !B.eof(); l++) {
-                a = b = "";
-                getline(A, a); getline(B, b);
+                a = b = otou = utoo = parsing = "";
+                
+                getline(A, a); 
                 a = std::regex_replace(a, std::regex("\\r"), "");
+                n_a = (!a.empty() ? std::ceil(double(a.length())/double(MAX_LENGTH)) : 1);
+
+                getline(B, b);
                 b = std::regex_replace(b, std::regex("\\r"), "");
+                n_b = (!b.empty() ? std::ceil(double(b.length())/double(MAX_LENGTH)) : 1);
 
-                aux = pre_analysis(a, b);
-                if (aux[0] != '=') {
-                    has_changes = true;
-                    if (aux[0] != '!') {
-                        out << ">>@" << l << " " << aux << "\n";
+                for (int i = 1; i <= std::max(n_a, n_b); i++) {
+                    std::string a_a = (i <= n_a ? a.substr((i-1)*MAX_LENGTH, i*MAX_LENGTH) : "");
+                    std::string b_b = (i <= n_b ? b.substr((i-1)*MAX_LENGTH, i*MAX_LENGTH) : "");
+                    aux = pre_analysis(a_a, b_b);
+                    if (aux[0] != '=') {
+                        has_changes = true;
+                        if (aux[0] != '!') {
+                            otou += aux;
+                            utoo += pre_analysis(b_b, a_a);
+                        } else {
+                            sequence_comparator AB(a_a, b_b, true);
+                            otou += AB.to_string(aux);
+                            if (!aux.empty()) parsing += "," + aux;
 
-                        aux = pre_analysis(b, a);
-                        out << "<<@" << l << " " << aux << "\n";
-                    } else {
-                        sequence_comparator AB(a, b, true);
-                        out << ">>@" << l << " " << AB.to_string() << "\n";
-
-                        sequence_comparator BA(b, a, true);
-                        out << "<<@" << l << " " << BA.to_string() << "\n";
+                            sequence_comparator BA(b_b, a_a, true);
+                            utoo += BA.to_string(aux);
+                            if (!aux.empty()) parsing += "," + aux;
+                        }
                     }
                 }
+                if (!otou.empty()) {
+                    if (!first_change) out << "\n";
+                    else first_change = false;
+                    out << ">>@" << l << " " << (!parsing.empty() ? parsing : "!") << " " << otou << "\n";
+                }
+                if (!utoo.empty()) out << "<<@" << l << " " << (!parsing.empty() ? parsing : "!") << " " << utoo;
             }
             A.close();
             B.close();
@@ -636,7 +656,7 @@ public:
                 rewrite_register();
             } else remove(changes_file.c_str());
 
-        } catch (file_not_followed e) {
+        } catch (file_not_followed e) { 
             std::cerr << e.what() << std::endl;
         } catch (file_not_found e) {
             std::cerr << e.what() << std::endl;
