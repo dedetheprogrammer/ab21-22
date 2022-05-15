@@ -2,6 +2,15 @@
 #include <exception>
 #include <string>
 
+struct version_not_installed : public std::exception {
+
+    version_not_installed() {}
+
+	const char * what () const throw () {
+    	return "version: error: version was not installed yet, run version init";
+    }
+};
+
 struct file_not_found : public std::exception {
 
     std::string file; 
@@ -78,15 +87,22 @@ struct unknown_option : public std::exception {
     }
 };
 
-struct bad_arguments_number : public std::exception {
+struct bad_option_usage : public std::exception {
 
     std::string option;
     std::string msg;
 
-    bad_arguments_number(std::string option) : option(option) {
-        msg = ("version: error: \'" + option + "\' requires a file to work");
-        if(!option.compare("follow")) msg = " --> follow <file>";
-        else if(!option.compare("remove")) msg = " --> remove <file>";
+    bad_option_usage(std::string option) : option(option) {
+        msg = ("version: error: incorrect option usage ");
+        if(!option.compare("add")) msg += "--> version add <file>";
+        else if(!option.compare("erase")) msg += "--> version erase";
+        else if(!option.compare("help")) msg += "--> version help";
+        else if(!option.compare("init")) msg += "--> version init";
+        else if(!option.compare("log")) msg += "--> version log [<file>]";
+        else if(!option.compare("remove")) msg += "--> version remove <file>";
+        else if(!option.compare("restore")) msg += "--> version restore <file> --version <n>";
+        else if(!option.compare("see")) msg += "--> version see <file>";
+        else if(!option.compare("update")) msg += "--> version update <file> [--name <name>][--comm \"<desc>\"]";
     } 
 
 	const char * what () const throw () {

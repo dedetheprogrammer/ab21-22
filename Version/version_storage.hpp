@@ -139,6 +139,14 @@ class version_storage {
             last_modified_date = date;
         }
 
+        void erase() {
+            remove((".data/" + version_id).c_str());
+            for (; last_version > 1; last_version--) {
+                std::string file = ".data/" + version_id + "_" + padding(last_version, '0', 5) + "__";
+                remove(file.c_str());
+            }
+        }
+
         // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         // -- Parses file path.
         // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -216,8 +224,9 @@ class version_storage {
                 << std::endl;
         }
 
-        std::string next_version_file() {
-            return ".data/" + version_id + "_" + padding(current_version+1, '0', 5) 
+        std::string changes_file(bool mode = false) {
+            return ".data/" + version_id + "_" 
+                + padding((!mode ? current_version : current_version+1), '0', 5)
                 + "__";
         }
 
@@ -361,8 +370,8 @@ class version_storage {
     }
 
     void a_link_to_the_past(std::string changes_str, int& line, std::ifstream& sav, std::ofstream& dst) {
-        int target = stoi(substr(changes_str, " ").substr(3));
 
+        int target = stoi(substr(changes_str, " ").substr(3));
         std::string lwac; // Line with applied changes.
         std::vector<std::string> changes = tokenize(changes_str, "(\\+|\\-|\\=)", 0, 1);
         for (; getline(sav, lwac) && line != target; line++) dst << lwac << "\n";
@@ -390,9 +399,14 @@ class version_storage {
     }
 
 public:
-    version_storage() : n_files(0) {
-        parse_version_timestamp(timestamp());
-        read_register();
+    version_storage(int init = false) : n_files(0) {
+        if (!init) {
+            struct stat v;
+            if (stat(PATH.c_str(), &v) != 0 || v.st_mode & S_IFREG)
+                throw version_not_installed();
+            parse_version_timestamp(timestamp());
+            read_register();
+        }
     }
 
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -428,6 +442,19 @@ public:
             std::cerr << e.what() << std::endl;
         } catch (file_already_followed e) {
             std::cerr << e.what() << std::endl;
+        }
+    }
+
+    void Erase() {
+        struct stat v;
+        if (!stat(PATH.c_str(), &v) != 0 && !(v.st_mode & S_IFREG)) {
+            for(auto &i:files) i.erase(); 
+            remove(REGISTER.c_str());
+            #ifdef WIN32
+                _rmdir(PATH.c_str());
+            #else
+                rmdir(PATH.c_str(), mode_t(0755));
+            #endif
         }
     }
 
@@ -491,40 +518,43 @@ public:
             if (f->current_version == version) return;
 
             int line = 1;
-            std::string changes_file, otou, utoo;
-            std::ifstream in(PATH + f->version_id);
-            std::ofstream out(arg);
-
+            std::string otou, utoo;
             // -- Later version -----------------------------------
             if (f->current_version < version) {
                 if (version > f->last_version) throw version_not_found(version);
                 for (; f->current_version < version; f->current_version++) {
-                    changes_file = PATH + f->version_id + "_" 
-                        + padding(f->current_version+1, '0', 5) + "__";
-                    std::ifstream ch(changes_file);
+                    line = 1;
+                    std::ifstream in(PATH + f->version_id), ch(f->changes_file(1));
+                    std::ofstream out("tmp");
+
                     for(; getline(ch, otou) && getline(ch, utoo);)
                         a_link_to_the_past(otou, line, in, out);
-                    ch.close();
+                    while(getline(in, otou)) out << otou << "\n";
+
+                    in.close(); ch.close(); out.close();
+                    remove(arg.c_str());
+                    rename("tmp", arg.c_str());
+                    backup_file(arg, PATH + f->version_id);
                 }
-                while(getline(in, changes_file)) out << changes_file << "\n";
             } else {
                 for (; f->current_version > version; f->current_version--) {
-                    changes_file = PATH + f->version_id + "_" 
-                        + padding(f->current_version, '0', 5) + "__";
-                    std::ifstream ch(changes_file); 
+                    line = 1;
+                    std::ifstream in(PATH + f->version_id), ch(f->changes_file());
+                    std::ofstream out("tmp");
+
                     for(; getline(ch, otou) && getline(ch, utoo);)
                         a_link_to_the_past(utoo, line, in, out);
-                    ch.close();   
+                    while(getline(in, utoo)) out << utoo << "\n";
+
+                    in.close(); ch.close(); out.close();
+                    remove(arg.c_str());
+                    rename("tmp", arg.c_str());
+                    backup_file(arg, PATH + f->version_id);
                 }
-                while(getline(in, changes_file)) out << changes_file << "\n";
             }
-            in.close();
-            out.close();
-
             f->update_time(time, date);
-            backup_file(arg, PATH + f->version_id);
+            //backup_file(arg, PATH + f->version_id);
             rewrite_register();
-
         } catch (file_not_followed e) {
             std::cerr << e.what() << std::endl;
         } catch (version_not_found e) {
