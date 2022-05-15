@@ -22,7 +22,7 @@
 
 #include "sequence_comparator.hpp"
 #include "version_exceptions.hpp"
-#include "utils.hpp"
+#include "Utils.hpp"
 
 #ifdef WIN32
     #include <direct.h>
