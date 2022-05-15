@@ -2,6 +2,7 @@
 ## Practicas
 ### [Practica 1](https://github.com/ddevigner/ab21-22/tree/main/HuffmanCompression)
 Compresor de archivos mediante el algoritmo de Huffman.
+
     - Ficheros:
         - [main.cpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/main.cpp): contains the main programm, its features.
         - [huffman_compressor.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_compressor.hpp): containts the implementation of the different functions that implement the Huffman Algorithm (as calculate the frequences table, the Huffman heap, etc) and the features offered by the compressor (compress, decompress).
