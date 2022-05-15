@@ -1,5 +1,5 @@
 # ALGORITMIA BASICA 2021-22
-## [Practice 1](https://github.com/ddevigner/ab21-22/tree/main/HuffmanCompression). File compressor based on Huffman algorithm.
+## [Part 1](https://github.com/ddevigner/ab21-22/tree/main/HuffmanCompression). File compressor based on Huffman algorithm.
 - Compilation:
     ```bash
         g++ -std=c++11 main.cpp -o huf
@@ -7,8 +7,8 @@
     
 - Use:
     ```bash
-    ./huf [opciones]
-    Opciones: 
+    ./huf [options]
+    Options: 
         -c <file>       Compress the given file.
         -d <file>.huf   Decompress the huffman file. Only works with <file>.huf files.
         help            Shows help.
@@ -20,19 +20,7 @@
     - [huffman_heap.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_heap.hpp): custom heap for huffman algorithm.
     - [huffman_exceptions.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_exceptions.hpp): exceptions for situations when the user is doing something that he shouldn't...
 
-## [Practica 2](https://github.com/ddevigner/ab21-22/tree/main/VersionStorage). Almacen y gestor de versiones
-- Archivos:
-    - [main.cpp](https://github.com/ddevigner/ab21-22/blob/main/Version/main.cpp): main program.
-    - [version_storage.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/version_storage.hpp): version storage functions implementation.
-    - [version_exceptions.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/version_exceptions.hpp): exceptions for situations when the user is doing something that he shouldn't...
-    - [sequence_comparator.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/sequence_comparator.hpp): implements the sequence comparation algorithm.
-    - [utils.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/utils.hpp): general purpose functions.
-
-- Compilacion:
-    ```bash
-        g++ -std=c++11 main.cpp -o version
-    ```
-
+## [Part 2](https://github.com/ddevigner/ab21-22/tree/main/VersionStorage). Version control storage.
 - Utilizacion
     ```bash
     version [opciones]
@@ -51,6 +39,18 @@
         update <file>   Actualiza el contenido del fichero. Si la version actual
                         es inferior a la ultima, se perderan todas las versiones
                         posteriores a la actual.
+    ```
+
+- Files:
+    - [main.cpp](https://github.com/ddevigner/ab21-22/blob/main/Version/main.cpp): main program.
+    - [version_storage.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/version_storage.hpp): version storage functions implementation.
+    - [version_exceptions.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/version_exceptions.hpp): exceptions for situations when the user is doing something that he shouldn't...
+    - [sequence_comparator.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/sequence_comparator.hpp): implements the sequence comparation algorithm.
+    - [utils.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/utils.hpp): general purpose functions.
+
+- Compilacion:
+    ```bash
+        g++ -std=c++11 main.cpp -o version
     ```
 
 - Restricciones:
