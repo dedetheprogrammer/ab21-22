@@ -3,12 +3,13 @@
 Un compresor y decompresor de archivos que aplica el algoritmo de Huffman para llevar a cabo el mismo.
 - Compilacion:
     ```bash
-        g++ -std=c++11 main.cpp -o huf
+    g++ -std=c++11 main.cpp -o huf
     ```
     
 - Comandos disponibles y utilización:
     ```bash
     ./huf [options]
+    
     Options: 
         -c <file>       Comprime el fichero dado.
         -d <file>.huf   Descomprime el fichero dado, si se pierde el .huf, no será posible recuperar su contenido original.
@@ -28,18 +29,20 @@ Un gestor de versiones de ficheros portable basado en el <em>algoritmo de compar
 
 - Compilacion:
     ```bash
-        g++ -std=c++11 main.cpp -o version
+    g++ -std=c++11 main.cpp -o version
     ```
 
 - <p align="justify"> Para poder utilizar <i>version</i> y todas las ventajas que ofrece, uno debe recordar <b>inicializarlo</b> antes de poder usarlo. Esta opción creará la carpeta con los archivos necesarios para que <i>version</i> pueda funcionar correctamente.</p>
+
    ```bash
    ./version init
    ```
 
 - Comandos disponibles y utilización:
     ```bash
-    version [opciones]
-    Opciones:
+    version [options]
+    
+    Options:
         add <file>                      Añade el fichero al registro.
         erase                           Elimina la carpeta de version.
         help                            Muestra ayuda.
