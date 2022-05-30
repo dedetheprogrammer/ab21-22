@@ -1,29 +1,29 @@
 # ALGORITMIA BASICA 2021-22
 ## [1ª Parte](https://github.com/ddevigner/ab21-22/tree/main/HuffmanCompression). Huffman: un [de]compresor de archivos mediante el algoritmo de Huffman.
 Un compresor y decompresor de archivos que aplica el algoritmo de Huffman para llevar a cabo el mismo.
-- Compilation:
+- Compilacion:
     ```bash
         g++ -std=c++11 main.cpp -o huf
     ```
     
-- Use:
+- Comandos disponibles y utilización:
     ```bash
     ./huf [options]
     Options: 
-        -c <file>       Compress the given file.
-        -d <file>.huf   Decompress the huffman file. Only works with <file>.huf files.
-        help            Shows help.
+        -c <file>       Comprime el fichero dado.
+        -d <file>.huf   Descomprime el fichero dado, si se pierde el .huf, no será posible recuperar su contenido original.
+        help            Muestra este mismo mensaje.
     ```
 
-- Files:
-    - [main.cpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/main.cpp): main program.
-    - [huffman_compressor.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_compressor.hpp): huffman compressor and huffman algorithm functions implementation.
-    - [huffman_heap.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_heap.hpp): custom heap for huffman algorithm.
-    - [huffman_exceptions.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_exceptions.hpp): exceptions for situations when the user is doing something that he shouldn't...
+- Ficheros:
+    - [main.cpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/main.cpp): contiene el programa principal.
+    - [huffman_compressor.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_compressor.hpp): contiene la implementación de los algoritmos de compresion y decomprension y la implementación del algoritmo de Huffman.
+    - [huffman_heap.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_heap.hpp): monticulo de Huffman personalizado para simplificar las operaciones.
+    - [huffman_exceptions.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_exceptions.hpp): fichero de excepciones, para usuarios que hacen lo que no deberían hacer...
 
 ## [2ª Parte](https://github.com/ddevigner/ab21-22/tree/main/VersionStorage). Version: un almacen y gestor de versiones de fichero.
 <p align="justify">
-Un gestor de versiones de ficheros portable basado en el <em>algoritmo de comparación de secuencias en el paradigma de la programación dinámica</em> que permite el seguimiento de cualquier fichero y gestionar sus diferentes versiones que se vayan guardando o actualizando, que a diferencia de Git/Github no se requiere de inicializar un repositorio para su seguimiento, sino que ahora es posible seguir cualquier fichero de manera independiente sea el path que sea sin necesidad de crear una agrupación, repositorio, etc. y además permitirá navegar entre las diferentes versiones restaurandolas, sean versiones anteriores o versiones posteriores.
+Un gestor de versiones de ficheros portable basado en el <em>algoritmo de comparación de secuencias en el paradigma de la programación dinámica</em> que permite el <b>seguimiento de</b> cualquier <b>fichero</b> y <b>gestionar sus</b> diferentes <b>versiones</b> que se vayan guardando o actualizando, que a diferencia de Git/Github <b>no se requiere de inicializar un repositorio para su seguimiento</b>, sino que ahora <b>es posible seguir cualquier fichero</b> de manera independiente <b>sea el path que sea</b> sin necesidad de crear una agrupación, repositorio, etc. y además permitirá <b>navegar entre</b> las <b>diferentes versiones restaurandolas</b>, sean versiones anteriores o versiones posteriores. También permite nombrar las versiones e incluso introducir una breve descripción de la misma.
 </p>
 
 - Compilacion:
@@ -31,7 +31,7 @@ Un gestor de versiones de ficheros portable basado en el <em>algoritmo de compar
         g++ -std=c++11 main.cpp -o version
     ```
 
-- Para poder utilizar **_version_** y todas las ventajas que ofrece, uno debe recordar inicializarlo antes de poder usarlo. Esta opción creará la carpeta con los archivos necesarios para que **_version_** pueda funcionar correctamente.
+- <p align="justify"> Para poder utilizar <i>version</i> y todas las ventajas que ofrece, uno debe recordar <b>inicializarlo</b> antes de poder usarlo. Esta opción creará la carpeta con los archivos necesarios para que <i>version</i> pueda funcionar correctamente.</p>
    ```bash
    ./version init
    ```
@@ -48,8 +48,8 @@ Un gestor de versiones de ficheros portable basado en el <em>algoritmo de compar
         remove <file>                   Quita el fichero del registro.
         restore <file> --version <n>    Restaura la version n del fichero, sea posterior o anterior.
         see <file>                      Muestra el contenido del fichero que tiene guardado version.
-        update <file>                   Actualiza el contenido del fichero. Si la version actual es inferior a la ultima, se perderan todas las versiones
-                                        posteriores a la actual.
+        update <file>                   Actualiza el contenido del fichero. Si la version actual es inferior a la ultima, 
+                                        se perderan todas las versiones posteriores a la actual.
     ```
 
 - Ficheros:
@@ -60,7 +60,7 @@ Un gestor de versiones de ficheros portable basado en el <em>algoritmo de compar
     - [utils.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/utils.hpp): funciones de uso general.
 
 - Restricciones:
-    - No es recomendable ir modificando los ficheros internos de **_version_** por uno mismo, puede conllevar a comportamientos indefinidos del programa, siempre que se quiera modificar algo, modificarlo a través de **_version_**. 
+    - <p align="justify"> No es recomendable ir modificando los ficheros internos de <i>version</i> por uno mismo, puede conllevar a comportamientos indefinidos del programa, <b>siempre que se quiera modificar algo, modificarlo a través de <i>version</i></b>.</p>
     - El comportamiento del programa con ficheros de texto con carácteres no ASCII (acentos, letras de diferentes alfabetos, etc) es impredecible.
     - El comportamiento con lineas mayores a 250 caracteres es un poco impredecible, no ha podido ser testeado del todo.
 
