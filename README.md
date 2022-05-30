@@ -1,5 +1,6 @@
 # ALGORITMIA BASICA 2021-22
-## [Part 1](https://github.com/ddevigner/ab21-22/tree/main/HuffmanCompression). File compressor based on Huffman algorithm.
+## [1ª Parte](https://github.com/ddevigner/ab21-22/tree/main/HuffmanCompression). Huffman: un [de]compresor de archivos mediante el algoritmo de Huffman.
+Un compresor y decompresor de archivos que aplica el algoritmo de Huffman para llevar a cabo el mismo.
 - Compilation:
     ```bash
         g++ -std=c++11 main.cpp -o huf
@@ -20,45 +21,48 @@
     - [huffman_heap.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_heap.hpp): custom heap for huffman algorithm.
     - [huffman_exceptions.hpp](https://github.com/ddevigner/ab21-22/blob/main/HuffmanCompression/huffman_exceptions.hpp): exceptions for situations when the user is doing something that he shouldn't...
 
-## [Part 2](https://github.com/ddevigner/ab21-22/tree/main/VersionStorage). Version control storage.
-- Utilizacion
-    ```bash
-    version [opciones]
-    Opciones:
-        add <file>      Añade el fichero al registro.
-        erase           Elimina la carpeta de version.
-        help            Muestra ayuda.
-        init            Inicializa version y crea la carpeta de registro.
-        log [<file>]    Muestra los ficheros registrados o informacion sobre un 
-                            fichero en especifico.
-        remove <file>   Quita el fichero del registro.
-        restore <file> --version <n>
-                        Restaura la version n del fichero, sea posterior o 
-                        anterior.
-        see <file>      Muestra el contenido del fichero que tiene guardado version.
-        update <file>   Actualiza el contenido del fichero. Si la version actual
-                        es inferior a la ultima, se perderan todas las versiones
-                        posteriores a la actual.
-    ```
-
-- Files:
-    - [main.cpp](https://github.com/ddevigner/ab21-22/blob/main/Version/main.cpp): main program.
-    - [version_storage.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/version_storage.hpp): version storage functions implementation.
-    - [version_exceptions.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/version_exceptions.hpp): exceptions for situations when the user is doing something that he shouldn't...
-    - [sequence_comparator.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/sequence_comparator.hpp): implements the sequence comparation algorithm.
-    - [utils.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/utils.hpp): general purpose functions.
+## [2ª Parte](https://github.com/ddevigner/ab21-22/tree/main/VersionStorage). Version: un almacen y gestor de versiones de fichero.
+<p align="justify">
+Un gestor de versiones de ficheros portable basado en el <em>algoritmo de comparación de secuencias en el paradigma de la programación dinámica</em> que permite el seguimiento de cualquier fichero y gestionar sus diferentes versiones que se vayan guardando o actualizando, que a diferencia de Git/Github no se requiere de inicializar un repositorio para su seguimiento, sino que ahora es posible seguir cualquier fichero de manera independiente sea el path que sea sin necesidad de crear una agrupación, repositorio, etc. y además permitirá navegar entre las diferentes versiones restaurandolas, sean versiones anteriores o versiones posteriores.
+</p>
 
 - Compilacion:
     ```bash
         g++ -std=c++11 main.cpp -o version
     ```
 
+- Para poder utilizar **_version_** y todas las ventajas que ofrece, uno debe recordar inicializarlo antes de poder usarlo. Esta opción creará la carpeta con los archivos necesarios para que **_version_** pueda funcionar correctamente.
+   ```bash
+   ./version init
+   ```
+
+- Comandos disponibles y utilización:
+    ```bash
+    version [opciones]
+    Opciones:
+        add <file>                      Añade el fichero al registro.
+        erase                           Elimina la carpeta de version.
+        help                            Muestra ayuda.
+        init                            Inicializa version y crea la carpeta de registro.
+        log [<file>]                    Muestra los ficheros registrados o informacion sobre un fichero en especifico.
+        remove <file>                   Quita el fichero del registro.
+        restore <file> --version <n>    Restaura la version n del fichero, sea posterior o anterior.
+        see <file>                      Muestra el contenido del fichero que tiene guardado version.
+        update <file>                   Actualiza el contenido del fichero. Si la version actual es inferior a la ultima, se perderan todas las versiones
+                                        posteriores a la actual.
+    ```
+
+- Ficheros:
+    - [main.cpp](https://github.com/ddevigner/ab21-22/blob/main/Version/main.cpp): contiene el código principal.
+    - [version_storage.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/version_storage.hpp): contiene la implementación interna de las funciones de **_version_**.
+    - [version_exceptions.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/version_exceptions.hpp): fichero de excepciones, para usuarios que hacen lo que no deberían hacer...
+    - [sequence_comparator.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/sequence_comparator.hpp): contiene la implementación interna del algoritmo en el que se basa el programa, un comparador de secuencias implementado con programación dinámica.
+    - [utils.hpp](https://github.com/ddevigner/ab21-22/blob/main/Version/utils.hpp): funciones de uso general.
+
 - Restricciones:
-    - INICIALIZAR VERSION, SI NO NO FUNCIONA: ./version init
+    - No es recomendable ir modificando los ficheros internos de **_version_** por uno mismo, puede conllevar a comportamientos indefinidos del programa, siempre que se quiera modificar algo, modificarlo a través de **_version_**. 
     - El comportamiento del programa con ficheros de texto con carácteres no ASCII (acentos, letras de diferentes alfabetos, etc) es impredecible.
     - El comportamiento con lineas mayores a 250 caracteres es un poco impredecible, no ha podido ser testeado del todo.
-    - Usar los comandos como se disponen.
-
 
 <!--Para la tabla de frecuencias se leerá el fichero pasado por parametro caracter a caracter, cada caracter nuevo se guardará en un nuevo nodo de monticulo de Huffman, de esta manera el programa ahorrará cierta computacion, cada aparicion de un caracter aumentará en uno su frecuencia y ademas, se guardará el numero de bytes reales leidos. En un punto posterior se explicará de manera mas detallada
 las decisiones de los bytes leidos y los nodos de Huffman. La tabla de frecuencias se guarda en un vector ordenado por frecuencias, se probaron otras decisiones como una tabla hash o un diccionario, pero el ordenado del vector era mucho mas flexible y aceptaba estructuras propias con funciones lambda.
