@@ -1,4 +1,4 @@
-# ALGORITMIA BASICA 2021-22
+# ALGORITMIA BASICA (2021-22)
 ## [1ª Parte](https://github.com/ddevigner/ab21-22/tree/main/HuffmanCompression). Huffman: un [de]compresor de archivos mediante el algoritmo de Huffman.
 Un compresor y decompresor de archivos que aplica el algoritmo de Huffman para llevar a cabo el mismo.
 - Compilacion:
